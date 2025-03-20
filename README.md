@@ -1,5 +1,8 @@
-# ✨ Llenguatge WhatsApp ✨
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/8056d174-0ae4-4f4a-88db-98310ae70276" alt="whatsapp_code_transparente">
+</p>
 
+# ✨ Llenguatge WhatsApp ✨
 > **Programa com si estiguessis xatejant!** 📱💬
 
 Tant si ets un **principiant en la programació** 👶 com si ets un **expert** 🚀 amb ganes d'un llenguatge divertit i proper, Llenguatge WhatsApp està aquí per ajudar-te a:
