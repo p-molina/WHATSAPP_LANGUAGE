@@ -1,7 +1,7 @@
 package LexicalAnalyzer;
 
 public class Token {
-    String token;
+    private final String token;
 
     /**
      * This class represents a token in the lexical analyzer.
