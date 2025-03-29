@@ -2,6 +2,7 @@ package LexicalAnalyzer;
 
 public class Token {
     private final String token;
+    //private TokenType type;
 
     /**
      * This class represents a token in the lexical analyzer.
@@ -21,5 +22,15 @@ public class Token {
     public String getToken() {
         return token;
     }
+
+    /*
+    public void setType(TokenType type) {
+        this.type = type;
+    }
+
+    public TokenType getType() {
+        return type;
+    }
+    */
 
 }

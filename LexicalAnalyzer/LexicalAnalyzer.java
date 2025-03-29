@@ -72,4 +72,13 @@ public class LexicalAnalyzer {
         }
     }
 
+    /**
+     * This method checks if there are more tokens in the stream.
+     *
+     * @return true if there are more tokens, false otherwise.
+     */
+    public boolean hasNextToken() {
+        return !streamOfTokens.isEmpty();
+    }
+
 }
