@@ -1,0 +1,21 @@
+num a -> 1 xd
+decimal b -> 1.1 xd
+lletra c -> z xd
+
+num func1 jajaj
+    xinpum 0 xd
+jejej
+
+decimal func2 jajaj
+    xinpum 3.14 xd
+jejej
+
+decimal func3 jajaj
+    xinpum k xd
+jejej
+
+num xat jajaj
+    a -> func1 xd
+    b -> func2 xd
+    c -> func3 xd
+jejej
