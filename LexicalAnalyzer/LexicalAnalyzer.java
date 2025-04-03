@@ -1,19 +1,23 @@
 package LexicalAnalyzer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileNotFoundException;
 
 public class LexicalAnalyzer {
-    private ArrayList<Token> streamOfTokens;
+    private Dictionary dictionary;
+    private ArrayList<String> streamOfCharacters;
 
     /**
      * This class is responsible for reading a file and creating a stream of tokens from the words in the file.
      * It uses the Token class to represent each word as a token.
      */
     public LexicalAnalyzer() {
-        streamOfTokens = new ArrayList<Token>();
+        //streamOfTokens = new ArrayList<Token>();
+        streamOfCharacters = new ArrayList<String>();
+        dictionary = new Dictionary();
     }
 
     /**
@@ -37,10 +41,9 @@ public class LexicalAnalyzer {
                 // Split the line into words
                 String[] words = data.split(" ");
 
-                // For each word, create a Token object and add it to the stream of Tokens
+                // Save
                 for (String word : words) {
-                    Token token = new Token(word);
-                    streamOfTokens.add(token);
+                    streamOfCharacters.add(word);
                 }
             }
 
@@ -60,12 +63,9 @@ public class LexicalAnalyzer {
      * @return The next Token object from the stream of tokens.
      */
     public Token getNextToken() {
-        if (!streamOfTokens.isEmpty()) {
-            // Get the first token from the stream
-            Token token = streamOfTokens.getFirst();
+        if (!streamOfCharacters.isEmpty()) {
+            Token token;
 
-            // Remove the first token from the stream
-            streamOfTokens.removeFirst();
             return token;
         } else {
             return null; // No more tokens
@@ -78,7 +78,7 @@ public class LexicalAnalyzer {
      * @return true if there are more tokens, false otherwise.
      */
     public boolean hasNextToken() {
-        return !streamOfTokens.isEmpty();
+        return !streamOfCharacters.isEmpty();
     }
 
 }

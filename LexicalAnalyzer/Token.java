@@ -1,36 +1,28 @@
 package LexicalAnalyzer;
 
 public class Token {
-    private final String token;
-    //private TokenType type;
+    private String tokenName;
+    private TokenType tokenType;
+    private Integer lineNumber;
 
-    /**
-     * This class represents a token in the lexical analyzer.
-     * It contains a string that represents the token.
-     *
-     * @param token The string that represents the token.
-     */
-    public Token(String token) {
-        this.token = token;
+    public Token(String tokenName, Integer attributeValue) {
+        this.tokenName = tokenName;
+        this.attributeValue = attributeValue;
     }
 
-    /**
-     * This method returns the string that represents the token.
-     *
-     * @return The string that represents the token.
-     */
-    public String getToken() {
-        return token;
+    public String getTokenName() {
+        return tokenName;
     }
 
-    /*
-    public void setType(TokenType type) {
-        this.type = type;
+    public void setTokenName(String tokenName) {
+        this.tokenName = tokenName;
     }
 
-    public TokenType getType() {
-        return type;
+    public Integer getAttributeValue() {
+        return attributeValue;
     }
-    */
 
+    public void setAttributeValue(Integer attributeValue) {
+        this.attributeValue = attributeValue;
+    }
 }
