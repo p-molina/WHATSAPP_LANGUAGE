@@ -1,84 +1,104 @@
 package LexicalAnalyzer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Scanner;
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
 public class LexicalAnalyzer {
-    private Dictionary dictionary;
-    private ArrayList<String> streamOfCharacters;
+    private List<Map.Entry<String, Pattern>> patterns;
+    private List<Token> tokens;
+    private int currentIndex = 0;
 
     /**
-     * This class is responsible for reading a file and creating a stream of tokens from the words in the file.
-     * It uses the Token class to represent each word as a token.
-     */
-    public LexicalAnalyzer() {
-        //streamOfTokens = new ArrayList<Token>();
-        streamOfCharacters = new ArrayList<String>();
-        dictionary = new Dictionary();
-    }
-
-    /**
-     * This method reads a file and creates a stream of tokens from the words in the file.
+     * Constructor for LexicalAnalyzer.
      *
-     * @param filePath The path to the file to be read.
-     * @return An ArrayList of Token objects representing the words in the file.
+     * @param dictionary The dictionary containing token patterns.
      */
-    public void analizeFile(String filePath) {
-        try {
-            // Create a File object
-            File myObj = new File(filePath);
+    public LexicalAnalyzer(Dictionary dictionary) {
+        patterns = new ArrayList<>();
+        tokens = new ArrayList<>();
 
-            // Create a Scanner object
-            Scanner myReader = new Scanner(myObj);
+        List<Map.Entry<String, String>> entries = new ArrayList<>(dictionary.getTokenPatterns().entrySet());
+        entries.sort((a, b) -> {
+            if (a.getKey().equals("ID")) return 1;
+            if (b.getKey().equals("ID")) return -1;
+            return 0;
+        });
 
-            // Read the file line by line
-            while (myReader.hasNextLine()) {
-                String data = myReader.nextLine();
+        for (Map.Entry<String, String> entry : entries) {
+            String tokenType = entry.getKey();
+            String regex = entry.getValue();
 
-                // Split the line into words
-                String[] words = data.split(" ");
-
-                // Save
-                for (String word : words) {
-                    streamOfCharacters.add(word);
-                }
-            }
-
-            // Close the Scanner
-            myReader.close();
-
-        } catch (FileNotFoundException e) {
-            // Handle the exception
-            System.out.println("ERROR: File not found.");
+            Pattern pattern = Pattern.compile(regex);
+            patterns.add(Map.entry(tokenType, pattern));
         }
-
     }
 
     /**
-     * This method returns the next token from the stream of tokens.
+     * Tokenizes the input file.
      *
-     * @return The next Token object from the stream of tokens.
+     * @param filePath The path to the file to be tokenized.
+     * @throws IOException If an I/O error occurs.
+     */
+    public void tokenize(String filePath) throws IOException {
+        int line = 1;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String currentLine;
+
+            while ((currentLine = reader.readLine()) != null) {
+                currentLine = currentLine.strip();
+                String[] lexemes = currentLine.split("\\s+");
+                int column = 1;
+
+                if (currentLine.isBlank()) {
+                    line++;
+                    continue;
+                }
+
+                for (String word : lexemes) {
+                    boolean matched = false;
+
+                    for (Map.Entry<String, Pattern> entry : patterns) {
+                        Matcher matcher = entry.getValue().matcher(word);
+                        if (matcher.matches()) {
+                            tokens.add(new Token(entry.getKey(), word, line, column));
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!matched) {
+                        throw new RuntimeException("Unknown token at line " + line + ", column " + column + ": " + word);
+                    }
+
+                    column += word.length() + 1;
+                }
+
+                line++;
+            }
+        }
+    }
+
+    /**
+     * Returns the next token from the list of tokens.
+     *
+     * @return The next token, or null if there are no more tokens.
      */
     public Token getNextToken() {
-        if (!streamOfCharacters.isEmpty()) {
-            Token token;
-
-            return token;
+        if (currentIndex < tokens.size()) {
+            return tokens.get(currentIndex++);
         } else {
-            return null; // No more tokens
+            return null;
         }
     }
 
     /**
-     * This method checks if there are more tokens in the stream.
+     * Returns the list of tokens.
      *
-     * @return true if there are more tokens, false otherwise.
+     * @return The list of tokens.
      */
-    public boolean hasNextToken() {
-        return !streamOfCharacters.isEmpty();
+    public List<Token> getTokens() {
+        return tokens;
     }
-
 }
