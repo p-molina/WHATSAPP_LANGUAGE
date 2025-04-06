@@ -16,6 +16,7 @@ public class Dictionary {
      */
     public Dictionary(String filePath) {
         tokenPatterns = new HashMap<>();
+
         try {
             JSONParser parser = new JSONParser();
             JSONObject jsonObject = (JSONObject) parser.parse(new FileReader(filePath));
