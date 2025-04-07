@@ -1,4 +1,4 @@
-package LexicalAnalyzer;
+package entities;
 
 public class Token {
     private String type;

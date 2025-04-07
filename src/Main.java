@@ -1,6 +1,6 @@
-import LexicalAnalyzer.Dictionary;
+import entities.Dictionary;
 import LexicalAnalyzer.LexicalAnalyzer;
-import LexicalAnalyzer.Token;
+import entities.Token;
 
 public class Main {
     public static void main(String[] args) {

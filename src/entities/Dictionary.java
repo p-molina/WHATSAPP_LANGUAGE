@@ -1,4 +1,4 @@
-package LexicalAnalyzer;
+package entities;
 
 import java.io.FileReader;
 import java.util.HashMap;

@@ -1,5 +1,8 @@
 package LexicalAnalyzer;
 
+import entities.Dictionary;
+import entities.Token;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
