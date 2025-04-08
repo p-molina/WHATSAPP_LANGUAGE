@@ -1,264 +1,372 @@
 {
-  "<AXIOMA>": {
-    "lletra": ["<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>"],
-    "decimal": ["<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>"],
-    "num": ["<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>"],
-    "textaco": ["<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>"]
-  },
-  "<VARS_GLOBALS>": {
-    "lletra": ["<DECLARACIO>", "<VARS_GLOBALS>"],
-    "num": ["<DECLARACIO>", "<VARS_GLOBALS>"],
-    "decimal": ["<DECLARACIO>", "<VARS_GLOBALS>"],
-    "textaco": ["<DECLARACIO>", "<VARS_GLOBALS>"]
-  },
-  "<DESIGNACIO>": {
-    "pos": ["<ASSIGNACIO>"],
-    "ID": ["<ASSIGNACIO>"]
-  },
-  "<DECLARACIO>": {
-    "lletra": ["<TIPUS>", "ID", "<DECLARACIO’>"],
-    "num": ["<TIPUS>", "ID", "<DECLARACIO’>"],
-    "decimal": ["<TIPUS>", "ID", "<DECLARACIO’>"],
-    "textaco": ["<TIPUS>", "ID", "<DECLARACIO’>"]
-  },
-  "<DECLARACIO’>": {
-    "->": ["EQUAL_ASSIGNATION", "<VALOR>"],
-    "jajaj": ["OPEN_CLAUDATOR", "<INIT_ARRAY>", "jejej"],
-    "xd": ["LINE_DELIMITER"]
-  },
-  "<INIT_ARRAY>": {
-    "INT_VALUE": ["<VALOR>", "<VALOR’>"],
-    "FLOAT_VALUE": ["<VALOR>", "<VALOR’>"],
-    "CHAR_VALUE": ["<VALOR>", "<VALOR’>"]
-  },
-  "<VALOR>": {
-    "INT_VALUE": ["INT_VALUE"],
-    "decimal": ["FLOAT_VALUE"],
-    "lletra": ["CHAR_VALUE"]
-  },
-  "<VALOR’>": {
-    "i": ["ARGUMENT_SEPARATOR", "<INIT_ARRAY>"],
-    "jejej": [],
-    "xd": []
-  },
-  "<ASSIGNACIO>": {
-    "pos": ["<ASSIGNACIO’>", "<VALOR>"],
-    "ID": ["<ASSIGNACIO’>", "<VALOR>"]
-  },
-  "<ASSIGNACIO’>": {
-    "ID": ["ID", "EQUAL_ASSIGNATION"],
-    "pos": ["POS", "INT_VALUE", "de", "ID", "EQUAL_ASSIGNATION"]
-  },
-  "<TIPUS_BASE>": {
-    "num": ["INT"],
-    "decimal": ["FLOAT"],
-    "lletra": ["CHAR"]
-  },
-  "<TIPUS>": {
-    "num": ["<TIPUS_BASE>"],
-    "decimal": ["<TIPUS_BASE>"],
-    "lletra": ["<TIPUS_BASE>"],
-    "textaco": ["ARRAY", "de", "INT_VALUE", "<TIPUS_BASE>"]
-  },
-  "<VALOR_RETURN>": {
-    "INT_VALUE": ["<VALOR>"],
-    "FLOAT_VALUE": ["<VALOR>"],
-    "CHAR_VALUE": ["<VALOR>"],
-    "pos": ["POS", "INT_VALUE", "de", "ID"],
-    "ID": ["ID"]
-  },
-  "<FUNCIONS>": {
-    "lletra": ["<CREA_FUNCIO>", "<FUNCIONS>"],
-    "num": ["<CREA_FUNCIO>", "<FUNCIONS>"],
-    "decimal": ["<CREA_FUNCIO>", "<FUNCIONS>"],
-    "textaco": ["<CREA_FUNCIO>", "<FUNCIONS>"],
-    "xat": []
-  },
-  "<CREA_MAIN>": {
-    "num": ["INT", "MAIN", "<FUNC_BODY>"]
-  },
-  "<CREA_FUNCIO>": {
-    "lletra": ["<TIPUS>", "ID", "<FUNC_BODY>"],
-    "num": ["<TIPUS>", "ID", "<FUNC_BODY>"],
-    "decimal": ["<TIPUS>", "ID", "<FUNC_BODY>"],
-    "textaco": ["<TIPUS>", "ID", "<FUNC_BODY>"]
-  },
-  "<FUNC_BODY>": {
-    "jajaj": ["OPEN_CLAUDATOR", "<BODY>", "jejej"]
-  },
-  "<HANDLE_RETURN>": {
-    "xinpum": ["RETURN", "<VALOR_RETURN>", "xd"]
-  },
-  "<EXPRESSIO>": {
-    "INT_VALUE": ["<TERME>", "<EXPRESSIO'>"],
-    "FLOAT_VALUE": ["<TERME>", "<EXPRESSIO'>"],
-    "CHAR_VALUE": ["<TERME>", "<EXPRESSIO'>"],
-    "ID": ["<TERME>", "<EXPRESSIO'>"],
-    "¿": ["<TERME>", "<EXPRESSIO'>"]
-  },
-  "<EXPRESSIO'>": {
-    "+": ["SUM", "<TERME>", "<EXPRESSIO'>"],
-    "-": ["MINUS", "<TERME>", "<EXPRESSIO'>"],
-    "INT_VALUE": [],
-    "FLOAT_VALUE": [],
-    "CHAR_VALUE": [],
-    "ID": [],
-    "¿": [],
-    "?": [],
-    "bro": [],
-    "tombarella": [],
-    "xinpum": [],
-    "pos": [],
-    "jejej": [],
-    "xd": []
-  },
-  "<TERME>": {
-    "INT_VALUE": ["<FACTOR>", "<TERME'>"],
-    "FLOAT_VALUE": ["<FACTOR>", "<TERME'>"],
-    "CHAR_VALUE": ["<FACTOR>", "<TERME'>"],
-    "ID": ["<FACTOR>", "<TERME'>"],
-    "¿": ["<FACTOR>", "<TERME'>"]
-  },
-  "<TERME'>": {
-    "*": ["MULTIPLY", "<FACTOR>", "<TERME'>"],
-    "/": ["DIVISION", "<FACTOR>", "<TERME'>"],
-    "INT_VALUE": [],
-    "FLOAT_VALUE": [],
-    "CHAR_VALUE": [],
-    "ID": [],
-    "¿": [],
-    "?": [],
-    "bro": [],
-    "tombarella": [],
-    "xinpum": [],
-    "pos": [],
-    "jejej": [],
-    "xd": [],
-    "+": [],
-    "-": []
-  },
-  "<FACTOR>": {
-    "¿": ["OPEN_PARENTESIS", "<EXPRESSIO>", "?"],
-    "ID": ["ID"],
-    "INT_VALUE": ["<VALOR>"],
-    "FLOAT_VALUE": ["<VALOR>"],
-    "CHAR_VALUE": ["<VALOR>"]
-  },
-  "<CONDICIONAL>": {
-    "bro": ["IF", "¿", "<CONDICIO>", "?", "jajaj", "<BODY>", "jejej", "<CONDICIONAL'>"]
-  },
-  "<CONDICIONAL'>": {
-    "sino": ["ELSE", "jajaj", "<BODY>", "jejej"],
-    "pos": [],
-    "ID": [],
-    "INT_VALUE": [],
-    "FLOAT_VALUE": [],
-    "CHAR_VALUE": [],
-    "¿": [],
-    "bro": [],
-    "tombarella": [],
-    "xinpum": []
-  },
-  "<CONDICIO>": {
-    "ID": ["<COMPARACIO>", "<CONDICIO'>"],
-    "INT_VALUE": ["<COMPARACIO>", "<CONDICIO'>"],
-    "FLOAT_VALUE": ["<COMPARACIO>", "<CONDICIO'>"],
-    "CHAR_VALUE": ["<COMPARACIO>", "<CONDICIO'>"]
-  },
-  "<CONDICIO'>": {
-    "&": ["<TOKEN_CONCATENACIO>", "<CONDICIO>"],
-    "|": ["<TOKEN_CONCATENACIO>", "<CONDICIO>"],
-    "?": [],
-    ")": [],
-    "bro": [],          ← (Potential adjustment needed: '?) actually corresponds to '¿' maybe, but here it's closing parenthesis or something)
-    "tombarella": [],
-    "xinpum": []
-  },
-  "<COMPARACIO>": {
-    "ID": ["<ELEMENT>", "<COMPARACIO’>"],
-    "INT_VALUE": ["<ELEMENT>", "<COMPARACIO’>"],
-    "FLOAT_VALUE": ["<ELEMENT>", "<COMPARACIO’>"],
-    "CHAR_VALUE": ["<ELEMENT>", "<COMPARACIO’>"]
-  },
-  "<COMPARACIO’>": {
-    "=": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    "!=": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    ">": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    "<": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    ">=": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    "<=": ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
-    "&": [],
-    "|": [],
-    "?": []
-  },
-  "<ELEMENT>": {
-    "ID": ["ID"],
-    "INT_VALUE": ["<VALOR>"],
-    "FLOAT_VALUE": ["<VALOR>"],
-    "CHAR_VALUE": ["<VALOR>"]
-  },
-  "<TOKEN_CONDICIONAL>": {
-    "=": ["EQUAL_COMPARATION"],
-    "!=": ["DIFFERENT"],
-    ">": ["BIGGER"],
-    "<": ["LOWER"],
-    ">=": ["BIGGER_EQUAL"],
-    "<=": ["LOWER_EQUAL"],
-    "ID": [],
-    "INT_VALUE": [],
-    "FLOAT_VALUE": [],
-    "CHAR_VALUE": []
-  },
-  "<TOKEN_CONCATENACIO>": {
-    "&": ["AND"],
-    "|": ["OR"],
-    "ID": [],
-    "INT_VALUE": [],
-    "FLOAT_VALUE": [],
-    "CHAR_VALUE": []
-  },
-  "<BUCLE>": {
-    "tombarella": ["BUCLE", "¿", "<CONDICIO>", "?", "jajaj", "<BODY>", "jejej"]
-  },
-  "<BODY>": {
-    "pos": ["<CONTENT>", "<BODY'>"],
-    "ID": ["<CONTENT>", "<BODY'>"],
-    "INT_VALUE": ["<CONTENT>", "<BODY'>"],
-    "FLOAT_VALUE": ["<CONTENT>", "<BODY'>"],
-    "CHAR_VALUE": ["<CONTENT>", "<BODY'>"],
-    "¿": ["<CONTENT>", "<BODY'>"],
-    "bro": ["<CONTENT>", "<BODY'>"],
-    "tombarella": ["<CONTENT>", "<BODY'>"],
-    "xinpum": ["<CONTENT>", "<BODY'>"],
-    "jejej": []
-  },
-  "<BODY'>": {
-    "pos": ["<CONTENT>", "<BODY'>"],
-    "ID": ["<CONTENT>", "<BODY'>"],
-    "INT_VALUE": ["<CONTENT>", "<BODY'>"],
-    "FLOAT_VALUE": ["<CONTENT>", "<BODY'>"],
-    "CHAR_VALUE": ["<CONTENT>", "<BODY'>"],
-    "¿": ["<CONTENT>", "<BODY'>"],
-    "bro": ["<CONTENT>", "<BODY'>"],
-    "tombarella": ["<CONTENT>", "<BODY'>"],
-    "xinpum": ["<CONTENT>", "<BODY'>"],
-    "jejej": [],
-    "xd": []
-  },
-  "<CONTENT>": {
-    "pos": ["<DESIGNACIO>"],
-    "ID": ["<DESIGNACIO>"],
-    "INT_VALUE": ["<EXPRESSIO>"],
-    "FLOAT_VALUE": ["<EXPRESSIO>"],
-    "CHAR_VALUE": ["<EXPRESSIO>"],
-    "¿": ["<EXPRESSIO>"],
-    "bro": ["<CONDICIONAL>"],
-    "tombarella": ["<BUCLE>"],
-    "xinpum": ["<HANDLE_RETURN>"],
-    "jejej": [],
-    "xd": []
-  },
-  "<CALL_FUNCIO>": {
-    "ID": ["ID", "¿", "?", "xd"]
-  }
+  "<AXIOMA>": [
+    [
+      "<VARS_GLOBALS>",
+      "<FUNCIONS>",
+      "<CREA_MAIN>"
+    ]
+  ],
+  "<VARS_GLOBALS>": [
+    [
+      "<DECLARACIO>",
+      "<VARS_GLOBALS>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<DESIGNACIO>": [
+    [
+      "<ASSIGNACIO>"
+    ],
+    [
+      "<CALL_FUNCIO>"
+    ]
+  ],
+  "<DECLARACIO>": [
+    [
+      "<TIPUS>",
+      "ID",
+      "<DECLARACIO'>"
+    ]
+  ],
+  "<DECLARACIO'>": [
+    [
+      "EQUAL_ASSIGNATION",
+      "<VALOR>"
+    ],
+    [
+      "OPEN_CLAUDATOR",
+      "<INIT_ARRAY>",
+      "CLOSE_CLAUDATOR"
+    ],
+    [
+      "LINE_DELIMITER"
+    ]
+  ],
+  "<INIT_ARRAY>": [
+    [
+      "<VALOR>",
+      "<VALOR'>"
+    ]
+  ],
+  "<VALOR>": [
+    [
+      "INT_VALUE"
+    ],
+    [
+      "FLOAT_VALUE"
+    ],
+    [
+      "CHAR_VALUE"
+    ]
+  ],
+  "<VALOR'>": [
+    [
+      "ARGUMENT_SEPARATOR",
+      "<INIT_ARRAY>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<ASSIGNACIO>": [
+    [
+      "<ASSIGNACIO'>",
+      "<VALOR>"
+    ]
+  ],
+  "<ASSIGNACIO'>": [
+    [
+      "ID",
+      "EQUAL_ASSIGNATION"
+    ],
+    [
+      "POS",
+      "INT_VALUE",
+      "DE",
+      "ID",
+      "EQUAL_ASSIGNATION"
+    ]
+  ],
+  "<TIPUS_BASE>": [
+    [
+      "INT"
+    ],
+    [
+      "FLOAT"
+    ],
+    [
+      "CHAR"
+    ]
+  ],
+  "<TIPUS>": [
+    [
+      "<TIPUS_BASE>"
+    ],
+    [
+      "ARRAY",
+      "DE",
+      "INT_VALUE",
+      "<TIPUS_BASE>"
+    ]
+  ],
+  "<VALOR_RETURN>": [
+    [
+      "<VALOR>"
+    ],
+    [
+      "POS",
+      "INT_VALUE",
+      "DE",
+      "ID"
+    ],
+    [
+      "ID"
+    ]
+  ],
+  "<FUNCIONS>": [
+    [
+      "<CREA_FUNCIO>",
+      "<FUNCIONS>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<CREA_MAIN>": [
+    [
+      "INT",
+      "MAIN",
+      "<FUNC_BODY>"
+    ]
+  ],
+  "<CREA_FUNCIO>": [
+    [
+      "<TIPUS>",
+      "ID",
+      "<FUNC_BODY>"
+    ]
+  ],
+  "<FUNC_BODY>": [
+    [
+      "OPEN_CLAUDATOR",
+      "<BODY>",
+      "CLOSE_CLAUDATOR"
+    ]
+  ],
+  "<HANDLE_RETURN>": [
+    [
+      "RETURN",
+      "<VALOR_RETURN>",
+      "LINE_DELIMITER"
+    ]
+  ],
+  "<EXPRESSIO>": [
+    [
+      "<TERME>",
+      "<EXPRESSIO'>"
+    ]
+  ],
+  "<EXPRESSIO'>": [
+    [
+      "SUM",
+      "<TERME>",
+      "<EXPRESSIO'>"
+    ],
+    [
+      "MINUS",
+      "<TERME>",
+      "<EXPRESSIO'>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<TERME>": [
+    [
+      "<FACTOR>",
+      "<TERME'>"
+    ]
+  ],
+  "<TERME'>": [
+    [
+      "MULTIPLY",
+      "<FACTOR>",
+      "<TERME'>"
+    ],
+    [
+      "DIVISION",
+      "<FACTOR>",
+      "<TERME'>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<FACTOR>": [
+    [
+      "OPEN_PARENTESIS",
+      "<EXPRESSIO>",
+      "CLOSE_PARENTESIS"
+    ],
+    [
+      "ID"
+    ],
+    [
+      "<VALOR>"
+    ]
+  ],
+  "<CONDICIONAL>": [
+    [
+      "IF",
+      "OPEN_PARENTESIS",
+      "<CONDICIO>",
+      "CLOSE_PARENTESIS",
+      "OPEN_CLAUDATOR",
+      "<BODY>",
+      "CLOSE_CLAUDATOR",
+      "<CONDICIONAL'>"
+    ]
+  ],
+  "<CONDICIONAL'>": [
+    [
+      "ELSE",
+      "OPEN_CLAUDATOR",
+      "<BODY>",
+      "CLOSE_CLAUDATOR"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<CONDICIO>": [
+    [
+      "<COMPARACIO>",
+      "<CONDICIO'>"
+    ]
+  ],
+  "<CONDICIO'>": [
+    [
+      "<TOKEN_CONCATENACIO>",
+      "<CONDICIO>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<COMPARACIO>": [
+    [
+      "<ELEMENT>",
+      "<COMPARACIO'>"
+    ]
+  ],
+  "<COMPARACIO'>": [
+    [
+      "<TOKEN_CONDICIONAL>",
+      "<ELEMENT>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<ELEMENT>": [
+    [
+      "ID"
+    ],
+    [
+      "<VALOR>"
+    ]
+  ],
+  "<TOKEN_CONDICIONAL>": [
+    [
+      "EQUAL_COMPARATION"
+    ],
+    [
+      "DIFFERENT"
+    ],
+    [
+      "BIGGER"
+    ],
+    [
+      "LOWER"
+    ],
+    [
+      "BIGGER_EQUAL"
+    ],
+    [
+      "LOWER_EQUAL"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<TOKEN_CONCATENACIO>": [
+    [
+      "AND"
+    ],
+    [
+      "OR"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<BUCLE>": [
+    [
+      "BUCLE",
+      "OPEN_PARENTESIS",
+      "<CONDICIO>",
+      "CLOSE_PARENTESIS",
+      "OPEN_CLAUDATOR",
+      "<BODY>",
+      "CLOSE_CLAUDATOR"
+    ]
+  ],
+  "<BODY>": [
+    [
+      "<CONTENT>",
+      "<BODY'>"
+    ]
+  ],
+  "<BODY'>": [
+    [
+      "<CONTENT>",
+      "<BODY'>"
+    ],
+    [
+      "ε"
+    ]
+  ],
+  "<CONTENT>": [
+    [
+      "<DESIGNACIO>"
+    ],
+    [
+      "<EXPRESSIO>"
+    ],
+    [
+      "<CONDICIONAL>"
+    ],
+    [
+      "<BUCLE>"
+    ],
+    [
+      "<CALL_FUNCIO>"
+    ],
+    [
+      "<HANDLE_RETURN>"
+    ],
+    [
+      "LINE_DELIMITER"
+    ]
+  ],
+  "<CALL_FUNCIO>": [
+    [
+      "ID",
+      "OPEN_PARENTESIS",
+      "CLOSE_PARENTESIS",
+      "LINE_DELIMITER"
+    ]
+  ]
 }

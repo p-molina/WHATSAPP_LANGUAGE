@@ -3,12 +3,15 @@ package entities;
 import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.simple.JSONObject;
+import java.util.List;
+import java.util.ArrayList;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class Grammar {
-    private Map<String, Map<String, String[]>> grammarRules;
+    // Estructura: NoTerminal -> Lista de producciones -> Producción (lista de símbolos)
+    private Map<String, List<List<String>>> grammarRules;
 
     /**
      * Constructor que parsea la gramática a partir de un archivo JSON.
@@ -22,24 +25,27 @@ public class Grammar {
             JSONParser parser = new JSONParser();
             JSONObject jsonObject = (JSONObject) parser.parse(new FileReader(filePath));
 
-            // Se recorre cada no terminal de la gramática
             for (Object key : jsonObject.keySet()) {
                 String nonTerminal = (String) key;
-                JSONObject rules = (JSONObject) jsonObject.get(nonTerminal);
-                Map<String, String[]> ruleMap = new HashMap<>();
 
-                // Para cada clave del no terminal se obtiene la producción (un arreglo de símbolos)
-                for (Object innerKey : rules.keySet()) {
-                    String productionKey = (String) innerKey;
-                    JSONArray productionArray = (JSONArray) rules.get(productionKey);
-                    String[] production = new String[productionArray.size()];
+                // Obtenemos el array de producciones (que a su vez es un array de arrays)
+                JSONArray productionsArray = (JSONArray) jsonObject.get(nonTerminal);
 
-                    for (int i = 0; i < productionArray.size(); i++) {
-                        production[i] = (String) productionArray.get(i);
+                List<List<String>> listOfProductions = new ArrayList<>();
+
+                // Recorremos cada producción
+                for (Object productionObj : productionsArray) {
+                    JSONArray productionArray = (JSONArray) productionObj;
+                    List<String> productionSymbols = new ArrayList<>();
+
+                    for (Object symbol : productionArray) {
+                        productionSymbols.add((String) symbol);
                     }
-                    ruleMap.put(productionKey, production);
+                    listOfProductions.add(productionSymbols);
                 }
-                grammarRules.put(nonTerminal, ruleMap);
+
+
+                grammarRules.put(nonTerminal, listOfProductions);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,9 +55,11 @@ public class Grammar {
     /**
      * Retorna las reglas de la gramática.
      *
-     * @return Un mapa con las reglas de la gramática.
+     * @return Un mapa con las reglas de la gramática, donde cada
+     *         no terminal se asocia a una lista de producciones,
+     *         y cada producción se representa como una lista de símbolos.
      */
-    public Map<String, Map<String, String[]>> getGrammarRules() {
+    public Map<String, List<List<String>>> getGrammarRules() {
         return grammarRules;
     }
 }

@@ -3,9 +3,7 @@ package entities;
 public class Tree {
     private Node root;
 
-    public Tree() {
-
-    }
+    public Tree() {}
 
     public Node getRoot() {
         return root;
