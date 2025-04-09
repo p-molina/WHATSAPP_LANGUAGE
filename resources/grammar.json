@@ -27,7 +27,8 @@
     [
       "<TIPUS>",
       "ID",
-      "<DECLARACIO'>"
+      "<DECLARACIO'>",
+      "LINE_DELIMITER"
     ]
   ],
   "<DECLARACIO'>": [
@@ -41,7 +42,7 @@
       "CLOSE_CLAUDATOR"
     ],
     [
-      "LINE_DELIMITER"
+      "ε"
     ]
   ],
   "<INIT_ARRAY>": [
@@ -59,6 +60,9 @@
     ],
     [
       "CHAR_VALUE"
+    ],
+    [
+      "ID"
     ]
   ],
   "<VALOR'>": [
@@ -73,7 +77,8 @@
   "<ASSIGNACIO>": [
     [
       "<ASSIGNACIO'>",
-      "<VALOR>"
+      "<EXPRESSIO>",
+      "LINE_DELIMITER"
     ]
   ],
   "<ASSIGNACIO'>": [
@@ -112,6 +117,9 @@
     ]
   ],
   "<VALOR_RETURN>": [
+    [
+      "<EXPRESSIO>"
+    ],
     [
       "<VALOR>"
     ],
@@ -343,7 +351,8 @@
       "<DESIGNACIO>"
     ],
     [
-      "<EXPRESSIO>"
+      "<EXPRESSIO>",
+      "LINE_DELIMITER"
     ],
     [
       "<CONDICIONAL>"
@@ -356,9 +365,6 @@
     ],
     [
       "<HANDLE_RETURN>"
-    ],
-    [
-      "LINE_DELIMITER"
     ]
   ],
   "<CALL_FUNCIO>": [
