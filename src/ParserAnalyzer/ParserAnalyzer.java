@@ -1,167 +1,104 @@
+// src/ParserAnalyzer/ParserAnalyzer.java
 package ParserAnalyzer;
 
-import entities.Dictionary;
 import entities.Grammar;
-import entities.ParserTableBuilder;
 import entities.Node;
 import entities.Token;
+import entities.ParserTableBuilder;
+import LexicalAnalyzer.LexicalAnalyzer;
 
 import java.util.*;
 
 public class ParserAnalyzer {
-    private Dictionary dictionary;
-    private Grammar grammar;
-
-    private Map<String, Map<String, List<String>>> parsingTable;
-
     private static final String END_MARKER = "$";
-    private static final String EPSILON = "ε";
+    private static final String EPSILON    = "ε";
 
-    public ParserAnalyzer(Dictionary dictionary, Grammar grammar) {
-        this.dictionary = dictionary;
+    private final Grammar grammar;
+    private final Map<String, Map<String, List<String>>> table;
+
+    public ParserAnalyzer(Grammar grammar, ParserTableBuilder builder) {
         this.grammar = grammar;
-
-        ParserTableBuilder builder = new ParserTableBuilder(dictionary, grammar);
-        builder.buildParsingTable();
-        this.parsingTable = builder.getParsingTable();
+        this.table   = builder.getParsingTable();
     }
 
     /**
-     * Realiza el parse de la lista de tokens y retorna la raíz del AST.
-     *
-     * @param tokens Lista de tokens generada por LexicalAnalyzer.
-     * @return Nodo raíz del AST.
+     * Arranca el parseo LL(1) con el lexer ya tokenizado.
+     * @return la raíz del árbol de parseo
      */
-    public Node parse(List<Token> tokens) {
+    public Node parse(LexicalAnalyzer lexer) {
+        // 1) Obtener lista de tokens + marcador de fin
+        List<Token> tokens = new ArrayList<>(lexer.getTokens());
         tokens.add(new Token(END_MARKER, END_MARKER, -1, -1));
-        LinkedList<Node> stack = new LinkedList<>();
 
-        String startSymbol = "<AXIOMA>";
+        // 2) Pilas: símbolos y nodos
+        Deque<String> symbolStack = new ArrayDeque<>();
+        Deque<Node>   nodeStack   = new ArrayDeque<>();
 
-        Node root = new Node(startSymbol);
-        Node dollarNode = new Node(END_MARKER);
-
-        stack.push(dollarNode);
-        stack.push(root);
+        // 3) Inicializar
+        symbolStack.push(END_MARKER);
+        symbolStack.push("<AXIOMA>");
+        Node root = new Node("<AXIOMA>");
+        nodeStack.push(root);
 
         int index = 0;
-        Token lookahead = tokens.get(index);
+        while (!symbolStack.isEmpty()) {
+            String topSym = symbolStack.pop();
+            Node   cur    = nodeStack.pop();
+            Token  look   = tokens.get(index);
 
-        while (!stack.isEmpty()) {
-            Node topNode = stack.peek();
-            String topSymbol = topNode.getSymbol();
+            // 4) Si es ε, lo ignoramos
+            if (EPSILON.equals(topSym)) {
+                continue;
+            }
 
-            // Si la cima es un terminal (o $)
-            if (isTerminal(topSymbol)) {
-                // Comprobamos si coincide con el lookahead
-                if (topSymbol.equals(lookahead.getType()) || topSymbol.equals(lookahead.getLexeme())) {
-                    // Asignamos el Token real a este node (si no es '$')
-                    if (!topSymbol.equals(END_MARKER)) {
-                        topNode.setToken(lookahead);
-                    }
-                    stack.pop();
+            // 5) Si es terminal, hacemos match
+            if (isTerminal(topSym)) {
+                if (topSym.equals(look.getType())) {
+                    // rellenamos el nodo hoja con el token
+                    cur.setToken(look);
                     index++;
-                    if (index < tokens.size()) {
-                        lookahead = tokens.get(index);
-                    }
                 } else {
                     throw new RuntimeException(
-                            "Error: se esperaba el terminal '" + topSymbol + "' pero llegó '" + lookahead + "'"
+                            String.format("Error sintáctico: esperaba %s pero llegó %s en línea %d,col %d",
+                                    topSym, look.getType(), look.getLine(), look.getColumn())
                     );
                 }
-            }
-            // Si la cima es un no terminal
-            else {
-                // Buscamos la producción en la tabla [noTerminal, lookahead]
-                List<String> production = getProduction(topSymbol, lookahead);
-
+            } else {
+                // 6) No terminal: mirar la tabla [NT][lookahead]
+                Map<String, List<String>> row = table.get(topSym);
+                if (row == null) {
+                    throw new RuntimeException("No existe fila para no terminal " + topSym);
+                }
+                List<String> production = row.get(look.getType());
                 if (production == null) {
-                    // No existe entrada en la tabla => Error
                     throw new RuntimeException(
-                            "Error sintáctico: No hay producción para <" + topSymbol + ", " + lookahead + ">"
+                            String.format("Error sintáctico: no hay producción para %s con '%s'",
+                                    topSym, look.getType())
                     );
-                } else {
-                    // Expandir la producción
-                    stack.pop();
-
-                    // Si la producción no es simplemente [ε]
-                    if (!(production.size() == 1 && production.get(0).equals(EPSILON))) {
-                        // Apilamos los símbolos de la producción en orden inverso
-                        for (int i = production.size() - 1; i >= 0; i--) {
-                            String symbol = production.get(i);
-                            if (!symbol.equals(EPSILON)) {
-                                Node child = new Node(symbol);
-                                stack.push(child);
-                            }
-                        }
-
-                        // Creamos hijos en orden natural para el árbol
-                        List<Node> childrenInNaturalOrder = new ArrayList<>();
-                        for (String symbol : production) {
-                            if (!symbol.equals(EPSILON)) {
-                                childrenInNaturalOrder.add(new Node(symbol));
-                            }
-                        }
-
-                        // Añadimos como hijos del topNode
-                        for (Node c : childrenInNaturalOrder) {
-                            topNode.addChild(c);
-                        }
-                    } else {
-                        // Producción -> ε
-                        topNode.addChild(new Node(EPSILON));
-                    }
                 }
-            }
 
-            if (!stack.isEmpty() &&
-                    stack.peek().getSymbol().equals(END_MARKER) &&
-                    lookahead.getType().equals(END_MARKER)) {
-                stack.pop(); // consumimos $
-                break;
+                // 7) Crear nodos hijos y anexarlos
+                List<Node> children = new ArrayList<>();
+                for (String sym : production) {
+                    Node child = new Node(sym);
+                    children.add(child);
+                    cur.addChild(child);
+                }
+
+                // 8) Apilar en orden inverso
+                for (int i = production.size() - 1; i >= 0; i--) {
+                    symbolStack.push(production.get(i));
+                    nodeStack.push(children.get(i));
+                }
             }
         }
 
         return root;
     }
 
-    /**
-     * Devuelve la producción table[nonTerminal][lookahead], o null si no existe.
-     */
-    private List<String> getProduction(String nonTerminal, Token lookahead) {
-        Map<String, List<String>> row = parsingTable.get(nonTerminal);
-        if (row == null) {
-            return null;
-        }
-
-        List<String> production = row.get(lookahead.getType());
-        if (production != null) {
-            return production;
-        }
-
-        production = row.get(lookahead.getLexeme());
-        if (production != null) {
-            return production;
-        }
-
-        return null;
+    private boolean isTerminal(String sym) {
+        if (EPSILON.equals(sym) || END_MARKER.equals(sym)) return true;
+        // un terminal es cualquier cosa que no esté en la gramática
+        return !grammar.getGrammarRules().containsKey(sym);
     }
-
-    /**
-     * Distingue si un símbolo es terminal o no.
-     * Asumimos que un símbolo es terminal si:
-     *  - Es "$" o "ε"
-     *  - No está en grammarRules (o sea, no es un noTerminal)
-     */
-    private boolean isTerminal(String symbol) {
-        if (symbol.equals(END_MARKER) || symbol.equals(EPSILON)) {
-            return true;
-        }
-        return !grammar.getGrammarRules().containsKey(symbol);
-    }
-
-    public Map<String, Map<String, List<String>>> getParsingTable() {
-        return parsingTable;
-    }
-
 }

@@ -1,21 +1,17 @@
 package entities;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
 
 public class ParserTableBuilder {
     private Dictionary dictionary;
     private Grammar grammar;
-
+    private Map<String, List<List<String>>> grammarRules;
     private Map<String, Map<String, List<String>>> parsingTable;
 
     private Map<String, Set<String>> firstSets;
     private Map<String, Set<String>> followSets;
 
+    // Ajusta estos símbolos a tu conveniencia
     private static final String END_MARKER = "$";
     private static final String EPSILON = "ε";
 
@@ -23,6 +19,7 @@ public class ParserTableBuilder {
         this.dictionary = dictionary;
         this.grammar = grammar;
         this.parsingTable = new HashMap<>();
+        this.grammarRules = grammar.getGrammarRules();
         this.firstSets = new HashMap<>();
         this.followSets = new HashMap<>();
     }
@@ -31,53 +28,171 @@ public class ParserTableBuilder {
      * Construye la tabla de parsing LL(1).
      */
     public void buildParsingTable() {
-        // Calcular FIRST para todos los no terminales y sus producciones
-        computeFirstSets();
+        this.firstSets = computeFirstSets(this.grammarRules);
+        this.followSets = computeFollowSets(this.grammarRules, this.firstSets, "<AXIOMA>");
 
-        // Calcular FOLLOW para todos los no terminales
-        computeFollowSets();
-
-        // Inicializar la tabla (fila por cada noTerminal, columna por cada terminal + $)
         initParsingTable();
-
-        // Rellenar la tabla usando FIRST y FOLLOW
         fillParsingTable();
     }
 
     /**
      * Devuelve la tabla de parsing LL(1) generada.
-     * Estructura: parsingTable[NoTerminal][Terminal] = List<String> (la producción)
      */
     public Map<String, Map<String, List<String>>> getParsingTable() {
         return parsingTable;
     }
 
     // ------------------------
-    // | 1. Cálculo de FIRST  |
+    // 1. Cálculo de FIRST
     // ------------------------
-    private void computeFirstSets() {
-        // Inicializar conjuntos FIRST vacíos para cada símbolo no terminal
-        for (String nonTerminal : grammar.getGrammarRules().keySet()) {
-            firstSets.put(nonTerminal, new HashSet<>());
+    public static Map<String, Set<String>> computeFirstSets(Map<String, List<List<String>>> grammarRules) {
+        Map<String, Set<String>> first = new HashMap<>();
+        Set<String> nonTerminals = grammarRules.keySet();
+
+        for (String nt : nonTerminals) {
+            first.put(nt, new HashSet<>());
         }
 
-        boolean changed = true;
-        while (changed) {
+        boolean changed;
+        do {
             changed = false;
-            // Recorremos cada regla A
-            for (String A : grammar.getGrammarRules().keySet()) {
-                List<List<String>> productions = grammar.getGrammarRules().get(A);
+            for (String A : nonTerminals) {
+                for (List<String> production : grammarRules.get(A)) {
+                    Set<String> firstA = first.get(A);
+                    int beforeSize = firstA.size();
 
-                for (List<String> alpha : productions) {
-                    // Hallar FIRST(α)
-                    Set<String> alphaFirst = computeFirstOfSequence(alpha);
+                    boolean derivesEpsilonAll = true;
+                    for (String symbol : production) {
+                        if (nonTerminals.contains(symbol)) {
+                            Set<String> firstSym = new HashSet<>(first.get(symbol));
+                            firstSym.remove(EPSILON);
+                            firstA.addAll(firstSym);
 
-                    // Añadir FIRST(α) a FIRST(A)
-                    Set<String> currentFirstA = firstSets.get(A);
-                    int oldSize = currentFirstA.size();
-                    currentFirstA.addAll(alphaFirst);
-                    if (currentFirstA.size() > oldSize) {
+                            if (!first.get(symbol).contains(EPSILON)) {
+                                derivesEpsilonAll = false;
+                                break;
+                            }
+                        } else {
+                            firstA.add(symbol);
+                            derivesEpsilonAll = false;
+                            break;
+                        }
+                    }
+
+                    if (derivesEpsilonAll) {
+                        firstA.add(EPSILON);
+                    }
+
+                    if (firstA.size() > beforeSize) {
                         changed = true;
+                    }
+                }
+            }
+        } while (changed);
+
+        first.forEach((nt, fset) ->
+                System.out.println("FIRST(" + nt + ") = " + fset)
+        );
+
+        return first;
+    }
+
+    // -------------------------
+    // 2. Cálculo de FOLLOW
+    // -------------------------
+    public static Map<String, Set<String>> computeFollowSets(
+            Map<String, List<List<String>>> grammarRules,
+            Map<String, Set<String>> firstSets,
+            String startSymbol) {
+
+        Map<String, Set<String>> follow = new HashMap<>();
+        for (String nt : grammarRules.keySet()) {
+            follow.put(nt, new HashSet<>());
+        }
+        follow.get(startSymbol).add(END_MARKER);
+
+        boolean changed;
+        do {
+            changed = false;
+            for (Map.Entry<String, List<List<String>>> entry : grammarRules.entrySet()) {
+                String A = entry.getKey();
+                for (List<String> production : entry.getValue()) {
+                    Set<String> trailer = new HashSet<>(follow.get(A));
+                    for (int i = production.size() - 1; i >= 0; i--) {
+                        String symbol = production.get(i);
+                        if (grammarRules.containsKey(symbol)) {
+                            Set<String> followSym = follow.get(symbol);
+                            int before = followSym.size();
+                            followSym.addAll(trailer);
+                            if (followSym.size() > before) {
+                                changed = true;
+                            }
+
+                            Set<String> firstSym = firstSets.get(symbol);
+                            if (firstSym.contains(EPSILON)) {
+                                Set<String> minusEps = new HashSet<>(firstSym);
+                                minusEps.remove(EPSILON);
+                                trailer.addAll(minusEps);
+                            } else {
+                                trailer = new HashSet<>(firstSym);
+                                trailer.remove(EPSILON);
+                            }
+                        } else {
+                            trailer.clear();
+                            trailer.add(symbol);
+                        }
+                    }
+                }
+            }
+        } while (changed);
+
+        follow.forEach((nt, f) ->
+                System.out.printf("FOLLOW(%s) = %s%n", nt, f)
+        );
+
+        return follow;
+    }
+
+    // -------------------------
+    // 3. Construcción Tabla
+    // -------------------------
+    private void initParsingTable() {
+        for (String nonTerminal : grammarRules.keySet()) {
+            parsingTable.put(nonTerminal, new HashMap<>());
+        }
+    }
+
+    private void fillParsingTable() {
+        // Recopilar terminales definidos en el diccionario
+        Set<String> terminals = new HashSet<>(dictionary.getTokenPatterns().keySet());
+        terminals.add(END_MARKER);
+
+        for (String A : grammarRules.keySet()) {
+            List<List<String>> productions = grammarRules.get(A);
+            Map<String, List<String>> row = parsingTable.get(A);
+
+            for (List<String> prod : productions) {
+                Set<String> firstAlpha = computeFirstOfSequence(prod);
+
+                // 1) Para cada terminal t ∈ FIRST(α) \ {ε}, tabla[A][t] = α
+                for (String t : firstAlpha) {
+                    if (EPSILON.equals(t)) continue;
+                    // Si ya había algo, lanzamos excepción de conflicto LL(1)
+                    if (row.containsKey(t)) {
+                        throw new RuntimeException(
+                                "Tabla LL(1) conflictiva: " + A + " / " + t);
+                    }
+                    row.put(t, prod);
+                }
+
+                // 2) Si ε ∈ FIRST(α), para cada b ∈ FOLLOW(A), tabla[A][b] = α **sólo si** no existe**
+                if (firstAlpha.contains(EPSILON)) {
+                    for (String b : followSets.get(A)) {
+                        if (row.containsKey(b)) {
+                            // ya había una producción para b, la dejamos
+                            continue;
+                        }
+                        row.put(b, prod);
                     }
                 }
             }
@@ -85,175 +200,34 @@ public class ParserTableBuilder {
     }
 
     /**
-     * FIRST de una secuencia de símbolos (puede ser varios o uno) en forma de lista.
-     * - Recorremos símbolo por símbolo.
-     * - Si es terminal, se añade y paramos.
-     * - Si es no terminal, agregamos FIRST(noTerminal) y si FIRST(noTerminal) contiene ε, seguimos.
-     * - Si todos pueden producir ε, agregamos ε.
+     * Calcula FIRST de una secuencia de símbolos.
      */
     private Set<String> computeFirstOfSequence(List<String> symbols) {
         Set<String> result = new HashSet<>();
-        // Secuencia vacía -> FIRST = {ε}
-        if (symbols.isEmpty()) {
-            result.add(EPSILON);
-            return result;
+        boolean allEpsilon = true;
+
+        for (String sym : symbols) {
+            Set<String> symFirst;
+            if (firstSets.containsKey(sym)) {
+                symFirst = new HashSet<>(firstSets.get(sym));
+            } else {
+                symFirst = new HashSet<>();
+                symFirst.add(sym);
+            }
+
+            if (symFirst.contains(EPSILON)) {
+                symFirst.remove(EPSILON);
+                result.addAll(symFirst);
+            } else {
+                result.addAll(symFirst);
+                allEpsilon = false;
+                break;
+            }
         }
 
-        for (int i = 0; i < symbols.size(); i++) {
-            String s = symbols.get(i);
-            // Si es terminal (lo reconocemos porque está en dictionary o es algo como +, -),
-            // lo añadimos y paramos
-            if (isTerminal(s) && !s.equals(EPSILON)) {
-                result.add(s);
-                break;
-            }
-            // Si es ε, la añadimos y continuamos
-            if (s.equals(EPSILON)) {
-                result.add(EPSILON);
-                break;
-            }
-            // Si es un no terminal, añadimos FIRST(noTerminal) excepto ε
-            if (grammar.getGrammarRules().containsKey(s)) {
-                Set<String> firstOfNonTerminal = firstSets.get(s);
-                // Añadimos todo excepto ε
-                boolean hasEpsilon = false;
-                for (String t : firstOfNonTerminal) {
-                    if (!t.equals(EPSILON)) {
-                        result.add(t);
-                    } else {
-                        hasEpsilon = true;
-                    }
-                }
-                if (hasEpsilon) {
-                    // Continuamos al siguiente símbolo
-                    // Pero si es el último y también tiene ε, lo añadimos
-                    if (i == symbols.size() - 1) {
-                        result.add(EPSILON);
-                    }
-                } else {
-                    // Si no hay ε, paramos
-                    break;
-                }
-            } else {
-                // Si no es noTerminal ni ε, puede ser un terminal no contemplado
-                // Lo añadimos y paramos
-                result.add(s);
-                break;
-            }
+        if (allEpsilon) {
+            result.add(EPSILON);
         }
         return result;
-    }
-
-    // ------------------------
-    // | 2. Cálculo de FOLLOW |
-    // ------------------------
-    private void computeFollowSets() {
-        // Inicializar FOLLOW(A) vacío para cada no terminal A
-        for (String A : grammar.getGrammarRules().keySet()) {
-            followSets.put(A, new HashSet<>());
-        }
-        // Agregar el símbolo $ a FOLLOW del axioma
-        String firstNonTerminal = grammar.getGrammarRules().keySet().iterator().next();
-        followSets.get(firstNonTerminal).add(END_MARKER);
-
-        boolean changed = true;
-        while (changed) {
-            changed = false;
-            // Para cada regla A -> α
-            for (String A : grammar.getGrammarRules().keySet()) {
-                List<List<String>> productions = grammar.getGrammarRules().get(A);
-
-                for (List<String> alpha : productions) {
-                    // Recorremos la producción símbolo a símbolo
-                    for (int i = 0; i < alpha.size(); i++) {
-                        String B = alpha.get(i);
-                        if (grammar.getGrammarRules().containsKey(B)) {
-                            // B es no terminal
-                            Set<String> followB = followSets.get(B);
-                            int oldSize = followB.size();
-
-                            // Todo lo que esté en FIRST(α(i+1)) excepto ε, está en FOLLOW(B)
-                            boolean allNullable = true;
-                            for (int j = i + 1; j < alpha.size(); j++) {
-                                String nextSymbol = alpha.get(j);
-                                Set<String> firstNext = computeFirstOfSequence(
-                                        new ArrayList<String>(){{ add(nextSymbol); }});
-
-                                // Agregamos todo excepto ε a FOLLOW(B)
-                                for (String t : firstNext) {
-                                    if (!t.equals(EPSILON)) {
-                                        followB.add(t);
-                                    }
-                                }
-
-                                // Si no hay ε en FIRST(nextSymbol), paramos
-                                if (!firstNext.contains(EPSILON)) {
-                                    allNullable = false;
-                                    break;
-                                }
-                            }
-
-                            // Si todos los símbolos siguientes pueden derivar ε
-                            // o si B es el último símbolo, entonces FOLLOW(A) subset de FOLLOW(B)
-                            if (allNullable || i == alpha.size() - 1) {
-                                followB.addAll(followSets.get(A));
-                            }
-
-                            if (followB.size() > oldSize) {
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void initParsingTable() {
-        // Para cada no terminal, creamos un map interno
-        for (String nonTerminal : grammar.getGrammarRules().keySet()) {
-            parsingTable.put(nonTerminal, new HashMap<>());
-        }
-    }
-
-    private void fillParsingTable() {
-        // Obtenemos la lista de terminales desde Dictionary + el símbolo $
-        Set<String> terminals = new HashSet<>(dictionary.getTokenPatterns().keySet());
-        terminals.add(END_MARKER); // añadir $ como terminal
-
-        // Recorremos cada producción A -> α
-        for (String A : grammar.getGrammarRules().keySet()) {
-            List<List<String>> productions = grammar.getGrammarRules().get(A);
-            for (List<String> alpha : productions) {
-                // Computamos FIRST(α)
-                Set<String> firstAlpha = computeFirstOfSequence(alpha);
-
-                // Para cada terminal 't' ∈ FIRST(α), t != ε, añadir:
-                // table[A][t] = α
-                for (String t : firstAlpha) {
-                    if (!t.equals(EPSILON)) {
-                        parsingTable.get(A).put(t, alpha);
-                    }
-                }
-                // Si FIRST(α) contiene ε -> para cada 'b' ∈ FOLLOW(A), table[A][b] = α
-                if (firstAlpha.contains(EPSILON)) {
-                    for (String b : followSets.get(A)) {
-                        parsingTable.get(A).put(b, alpha);
-                    }
-                }
-            }
-        }
-    }
-
-    private boolean isTerminal(String symbol) {
-        if (symbol.equals(EPSILON) || symbol.equals(END_MARKER)) {
-            return true;
-        }
-        // Está en la lista de terminales
-        if (dictionary.getTokenPatterns().containsKey(symbol)) {
-            return true;
-        }
-        // No es uno de los no terminales
-        return !grammar.getGrammarRules().containsKey(symbol);
     }
 }
