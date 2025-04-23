@@ -1,9 +1,6 @@
 // src/Main.java
 import ParserAnalyzer.ParserAnalyzer;
-import entities.Dictionary;
-import entities.Grammar;
-import entities.ParserTableBuilder;
-import entities.Node;
+import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
 
 public class Main {
@@ -20,6 +17,13 @@ public class Main {
             // 3) Tokeniza el fichero de entrada
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
             lexer.tokenize("resources/whatsappFile.txt");
+
+            System.out.println("---- TOKENS GENERADOS ----");
+            for (Token token : lexer.getTokens()) {
+                System.out.println(token);
+            }
+            System.out.println("--------------------------");
+
 
             // 4) Parsea y obtiene el árbol
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);

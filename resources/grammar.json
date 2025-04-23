@@ -2,122 +2,136 @@
   "<AXIOMA>": [
     [ "<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>" ]
   ],
+
   "<VARS_GLOBALS>": [
-    [ "<DECLARACIO>", "<VARS_GLOBALS>" ],
+    [ "<DECLARACIO_LINE>", "<VARS_GLOBALS>" ],
     [ "ε" ]
   ],
+
+  "<DECLARACIO_LINE>": [
+    [ "<TIPUS>", "ID", "<DECLARACIO_CONT>" ]
+  ],
+
+  "<DECLARACIO_CONT>": [
+    [ "EQUAL_ASSIGNATION", "<VALOR>", "LINE_DELIMITER" ],
+    [ "OPEN_CLAUDATOR", "<INIT_ARRAY>", "CLOSE_CLAUDATOR", "LINE_DELIMITER" ]
+  ],
+
+  "<FUNCIONS>": [
+    [ "<CREA_FUNCIO>", "<FUNCIONS>" ],
+    [ "ε" ]
+  ],
+
+  "<CREA_FUNCIO>": [
+    [ "<TIPUS>", "ID", "<FUNC_BODY>" ]
+  ],
+
+  "<CREA_MAIN>": [
+    [ "INT", "MAIN", "<FUNC_BODY>" ]
+  ],
+
+  "<FUNC_BODY>": [
+    [ "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ]
+  ],
+
+  "<BODY>": [
+    [ "<CONTENT>", "<BODY'>" ]
+  ],
+
+  "<BODY'>": [
+    [ "<CONTENT>", "<BODY'>" ],
+    [ "ε" ]
+  ],
+
+  "<CONTENT>": [
+    [ "<DESIGNACIO>" ],
+    [ "<CONDICIONAL>" ],
+    [ "<BUCLE>" ],
+    [ "<HANDLE_RETURN>" ],
+    [ "LINE_DELIMITER" ]
+  ],
+
   "<DESIGNACIO>": [
-    [ "<ASSIGNACIO>" ],
-    [ "<CALL_FUNCIO>" ]
+    [ "ID", "<DESIGNACIO'>" ]
   ],
-  "<DECLARACIO>": [
-    [ "<TIPUS>", "ID", "<DECLARACIO'>", "LINE_DELIMITER" ]
+
+  "<DESIGNACIO'>": [
+    [ "EQUAL_ASSIGNATION", "<EXPRESSIO>", "LINE_DELIMITER" ],
+    [ "OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER" ]
   ],
-  "<DECLARACIO'>": [
-    [ "EQUAL_ASSIGNATION", "<VALOR>" ],
-    [ "OPEN_CLAUDATOR", "<INIT_ARRAY>", "CLOSE_CLAUDATOR" ],
+
+  "<HANDLE_RETURN>": [
+    [ "RETURN", "<VALOR_RETURN>", "LINE_DELIMITER" ]
+  ],
+
+  "<VALOR_RETURN>": [
+    [ "<EXPRESSIO>" ],
+    [ "POS", "INT_VALUE", "DE", "ID" ]
+  ],
+
+  "<EXPRESSIO>": [
+    [ "<TERME>", "<EXPRESSIO'>" ]
+  ],
+
+  "<EXPRESSIO'>": [
+    [ "SUM", "<TERME>", "<EXPRESSIO'>" ],
+    [ "MINUS", "<TERME>", "<EXPRESSIO'>" ],
     [ "ε" ]
   ],
-  "<INIT_ARRAY>": [
-    [ "<VALOR>", "<VALOR'>" ]
+
+  "<TERME>": [
+    [ "<FACTOR>", "<TERME'>" ]
   ],
+
+  "<TERME'>": [
+    [ "MULTIPLY", "<FACTOR>", "<TERME'>" ],
+    [ "DIVISION", "<FACTOR>", "<TERME'>" ],
+    [ "ε" ]
+  ],
+
+  "<FACTOR>": [
+    [ "OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS" ],
+    [ "<VALOR>" ]
+  ],
+
   "<VALOR>": [
     [ "INT_VALUE" ],
     [ "FLOAT_VALUE" ],
     [ "CHAR_VALUE" ],
     [ "ID" ]
   ],
-  "<VALOR'>": [
-    [ "ARGUMENT_SEPARATOR", "<INIT_ARRAY>" ],
-    [ "ε" ]
-  ],
-  "<ASSIGNACIO>": [
-    [ "<ASSIGNACIO'>", "<EXPRESSIO>", "LINE_DELIMITER" ]
-  ],
-  "<ASSIGNACIO'>": [
-    [ "ID", "EQUAL_ASSIGNATION" ],
-    [ "POS", "INT_VALUE", "DE", "ID", "EQUAL_ASSIGNATION" ]
-  ],
-  "<TIPUS_BASE>": [
-    [ "INT" ],
-    [ "FLOAT" ],
-    [ "CHAR" ]
-  ],
-  "<TIPUS>": [
-    [ "<TIPUS_BASE>" ],
-    [ "ARRAY", "DE", "INT_VALUE", "<TIPUS_BASE>" ]
-  ],
-  "<VALOR_RETURN>": [
-    [ "<EXPRESSIO>" ],
-    [ "<VALOR>" ],
-    [ "POS", "INT_VALUE", "DE", "ID" ],
-    [ "ID" ]
-  ],
-  "<FUNCIONS>": [
-    [ "<CREA_FUNCIO>", "<FUNCIONS>" ],
-    [ "ε" ]
-  ],
-  "<CREA_MAIN>": [
-    [ "INT", "MAIN", "<FUNC_BODY>" ]
-  ],
-  "<CREA_FUNCIO>": [
-    [ "<TIPUS>", "ID", "<FUNC_BODY>" ]
-  ],
-  "<FUNC_BODY>": [
-    [ "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ]
-  ],
-  "<HANDLE_RETURN>": [
-    [ "RETURN", "<VALOR_RETURN>", "LINE_DELIMITER" ]
-  ],
-  "<EXPRESSIO>": [
-    [ "<TERME>", "<EXPRESSIO'>" ]
-  ],
-  "<EXPRESSIO'>": [
-    [ "SUM", "<TERME>", "<EXPRESSIO'>" ],
-    [ "MINUS", "<TERME>", "<EXPRESSIO'>" ],
-    [ "ε" ]
-  ],
-  "<TERME>": [
-    [ "<FACTOR>", "<TERME'>" ]
-  ],
-  "<TERME'>": [
-    [ "MULTIPLY", "<FACTOR>", "<TERME'>" ],
-    [ "DIVISION", "<FACTOR>", "<TERME'>" ],
-    [ "ε" ]
-  ],
-  "<FACTOR>": [
-    [ "OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS" ],
-    [ "ID" ],
-    [ "<VALOR>" ]
-  ],
+
   "<CONDICIONAL>": [
-    [
-      "IF", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS",
-      "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR", "<CONDICIONAL'>"
-    ]
+    [ "IF", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR", "<CONDICIONAL'>" ]
   ],
+
   "<CONDICIONAL'>": [
     [ "ELSE", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ],
     [ "ε" ]
   ],
+
   "<CONDICIO>": [
     [ "<COMPARACIO>", "<CONDICIO'>" ]
   ],
+
   "<CONDICIO'>": [
     [ "<TOKEN_CONCATENACIO>", "<CONDICIO>" ],
     [ "ε" ]
   ],
+
   "<COMPARACIO>": [
     [ "<ELEMENT>", "<COMPARACIO'>" ]
   ],
+
   "<COMPARACIO'>": [
     [ "<TOKEN_CONDICIONAL>", "<ELEMENT>" ],
     [ "ε" ]
   ],
+
   "<ELEMENT>": [
-    [ "ID" ],
     [ "<VALOR>" ]
   ],
+
   "<TOKEN_CONDICIONAL>": [
     [ "EQUAL_COMPARATION" ],
     [ "DIFFERENT" ],
@@ -127,34 +141,34 @@
     [ "LOWER_EQUAL" ],
     [ "ε" ]
   ],
+
   "<TOKEN_CONCATENACIO>": [
     [ "AND" ],
     [ "OR" ],
     [ "ε" ]
   ],
+
   "<BUCLE>": [
-    [
-      "BUCLE", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS",
-      "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR"
-    ]
+    [ "BUCLE", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ]
   ],
-  "<BODY>": [
-    [ "<CONTENT>", "<BODY'>" ]
+
+  "<TIPUS_BASE>": [
+    [ "INT" ],
+    [ "FLOAT" ],
+    [ "CHAR" ]
   ],
-  "<BODY'>": [
-    [ "<CONTENT>", "<BODY'>" ],
+
+  "<TIPUS>": [
+    [ "<TIPUS_BASE>" ],
+    [ "ARRAY", "DE", "INT_VALUE", "<TIPUS_BASE>" ]
+  ],
+
+  "<INIT_ARRAY>": [
+    [ "<VALOR>", "<VALOR'>" ]
+  ],
+
+  "<VALOR'>": [
+    [ "ARGUMENT_SEPARATOR", "<INIT_ARRAY>" ],
     [ "ε" ]
-  ],
-  "<CONTENT>": [
-    [ "<DESIGNACIO>" ],
-    [ "<EXPRESSIO>", "LINE_DELIMITER" ],
-    [ "<CONDICIONAL>" ],
-    [ "<BUCLE>" ],
-    [ "<CALL_FUNCIO>" ],
-    [ "<HANDLE_RETURN>" ],
-    [ "LINE_DELIMITER" ]
-  ],
-  "<CALL_FUNCIO>": [
-    [ "ID", "OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER" ]
   ]
 }

@@ -7,8 +7,11 @@
     [ "ε" ]
   ],
   "<DESIGNACIO>": [
-    [ "<ASSIGNACIO>" ],
-    [ "<CALL_FUNCIO>" ]
+    [ "ID", "<DESIGNACIO'>" ]
+  ],
+  "<DESIGNACIO'>": [
+    [ "EQUAL_ASSIGNATION", "<EXPRESSIO>", "LINE_DELIMITER" ],
+    [ "OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER" ]
   ],
   "<DECLARACIO>": [
     [ "<TIPUS>", "ID", "<DECLARACIO'>", "LINE_DELIMITER" ]
@@ -49,9 +52,7 @@
   ],
   "<VALOR_RETURN>": [
     [ "<EXPRESSIO>" ],
-    [ "<VALOR>" ],
-    [ "POS", "INT_VALUE", "DE", "ID" ],
-    [ "ID" ]
+    [ "POS", "INT_VALUE", "DE", "ID" ]
   ],
   "<FUNCIONS>": [
     [ "<CREA_FUNCIO>", "<FUNCIONS>" ],
@@ -87,7 +88,6 @@
   ],
   "<FACTOR>": [
     [ "OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS" ],
-    [ "ID" ],
     [ "<VALOR>" ]
   ],
   "<CONDICIONAL>": [
@@ -115,7 +115,6 @@
     [ "ε" ]
   ],
   "<ELEMENT>": [
-    [ "ID" ],
     [ "<VALOR>" ]
   ],
   "<TOKEN_CONDICIONAL>": [
@@ -147,14 +146,9 @@
   ],
   "<CONTENT>": [
     [ "<DESIGNACIO>" ],
-    [ "<EXPRESSIO>", "LINE_DELIMITER" ],
     [ "<CONDICIONAL>" ],
     [ "<BUCLE>" ],
-    [ "<CALL_FUNCIO>" ],
     [ "<HANDLE_RETURN>" ],
     [ "LINE_DELIMITER" ]
-  ],
-  "<CALL_FUNCIO>": [
-    [ "ID", "OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER" ]
   ]
 }
