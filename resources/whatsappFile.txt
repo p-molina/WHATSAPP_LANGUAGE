@@ -1,21 +1,37 @@
-num a -> 1 xd
-decimal b -> 1.1 xd
-lletra c -> z xd
+num a -> 5 xd
+decimal b -> 3.14 xd
+lletra c -> 'z' xd
+textaco de 3 num arr jajaj 1 i 2 i 3 jejej xd
 
-num func1 jajaj
-    xinpum 0 xd
+decimal mitjana jajaj
+    tombarella ¿ a < 10 ? jajaj
+        a -> a + 1 xd
+    jejej
+    xinpum 2.718 xd
 jejej
 
-decimal func2 jajaj
-    xinpum 3.14 xd
+decimal opComplex jajaj
+    a -> ¿ ¿ a + 5 ? * b ? / 2 xd
+    xinpum a xd
 jejej
 
-decimal func3 jajaj
-    xinpum b xd
+decimal opComplex1 jajaj
+    xinpum ¿ ¿ a + 5 ? * b ? / 2 xd
+jejej
+
+num suma jajaj
+    bro ¿ a = 5 ? jajaj
+        a -> a + 5 xd
+    jejej
+    sino jajaj
+        a -> a - 1 xd
+    jejej
+    xinpum a xd
 jejej
 
 num xat jajaj
-    a -> func1 xd
-    b -> func2 xd
-    c -> func3 xd
+    a -> suma xd
+    b -> mitjana xd
+    pos 2 de arr -> 99 xd
+    xinpum 0 xd
 jejej

@@ -1,4 +1,5 @@
 import ParserAnalyzer.ParserAnalyzer;
+import SemanticAnalyzer.SemanticAnalyzer;
 import entities.Dictionary;
 import entities.Grammar;
 import entities.Node;
@@ -24,6 +25,10 @@ public class Main {
 
             System.out.println("¡Parseo completado sin errores! Árbol sintáctico:");
             printTree(root, "", true);
+
+            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
+            //semanticAnalyzer.analyze();
+
 
         } catch (Exception e) {
             System.err.println("Error durante el parseo:");

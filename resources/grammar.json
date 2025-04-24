@@ -102,7 +102,7 @@
   ],
 
   "<FACTOR>": [
-    ["OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS"],
+    ["OPEN_PARENTHESIS", "<EXPRESSIO>", "CLOSE_PARENTHESIS"],
     ["ID"],
     ["<VALOR>"]
   ],
