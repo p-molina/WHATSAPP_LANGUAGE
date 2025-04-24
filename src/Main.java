@@ -27,7 +27,7 @@ public class Main {
             printTree(root, "", true);
 
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
-            semanticAnalyzer.analyze();
+            //semanticAnalyzer.analyze();
 
 
         } catch (Exception e) {
