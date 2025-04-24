@@ -1,160 +1,155 @@
 {
   "<AXIOMA>": [
-    [ "<VARS_GLOBALS>", "<FUNCIONS>", "<CREA_MAIN>" ]
+    ["<UNIT_LIST>"]
   ],
-  "<VARS_GLOBALS>": [
-    [ "<DECLARACIO>", "<VARS_GLOBALS>" ],
-    [ "ε" ]
+
+  "<UNIT_LIST>": [
+    ["<UNIT>", "<UNIT_LIST>"],
+    ["ε"]
   ],
-  "<DESIGNACIO>": [
-    [ "<ASSIGNACIO>" ],
-    [ "<CALL_FUNCIO>" ]
+
+  "<UNIT>": [
+    ["<TIPUS>", "<UNIT_TAIL>"]
   ],
-  "<DECLARACIO>": [
-    [ "<TIPUS>", "ID", "<DECLARACIO'>", "LINE_DELIMITER" ]
+
+  "<UNIT_TAIL>": [
+    ["MAIN", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR"],
+    ["ID", "<DECL_OR_FUNC_TAIL>"]
   ],
-  "<DECLARACIO'>": [
-    [ "EQUAL_ASSIGNATION", "<VALOR>" ],
-    [ "OPEN_CLAUDATOR", "<INIT_ARRAY>", "CLOSE_CLAUDATOR" ],
-    [ "ε" ]
+
+  "<DECL_OR_FUNC_TAIL>": [
+    ["EQUAL_ASSIGNATION", "<EXPRESSIO>", "LINE_DELIMITER"],
+    ["OPEN_CLAUDATOR", "<DECL_OR_FUNC_TAIL_REST>"]
   ],
-  "<INIT_ARRAY>": [
-    [ "<VALOR>", "<VALOR'>" ]
+
+  "<DECL_OR_FUNC_TAIL_REST>": [
+    ["<INIT_ARRAY>", "CLOSE_CLAUDATOR", "LINE_DELIMITER"],
+    ["<BODY>", "CLOSE_CLAUDATOR"]
   ],
-  "<VALOR>": [
-    [ "INT_VALUE" ],
-    [ "FLOAT_VALUE" ],
-    [ "CHAR_VALUE" ],
-    [ "ID" ]
-  ],
-  "<VALOR'>": [
-    [ "ARGUMENT_SEPARATOR", "<INIT_ARRAY>" ],
-    [ "ε" ]
-  ],
-  "<ASSIGNACIO>": [
-    [ "<ASSIGNACIO'>", "<EXPRESSIO>", "LINE_DELIMITER" ]
-  ],
-  "<ASSIGNACIO'>": [
-    [ "ID", "EQUAL_ASSIGNATION" ],
-    [ "POS", "INT_VALUE", "DE", "ID", "EQUAL_ASSIGNATION" ]
-  ],
+
   "<TIPUS_BASE>": [
-    [ "INT" ],
-    [ "FLOAT" ],
-    [ "CHAR" ]
+    ["INT"],
+    ["FLOAT"],
+    ["CHAR"]
   ],
+
   "<TIPUS>": [
-    [ "<TIPUS_BASE>" ],
-    [ "ARRAY", "DE", "INT_VALUE", "<TIPUS_BASE>" ]
+    ["<TIPUS_BASE>"],
+    ["ARRAY", "DE", "INT_VALUE", "<TIPUS_BASE>"]
   ],
-  "<VALOR_RETURN>": [
-    [ "<EXPRESSIO>" ],
-    [ "<VALOR>" ],
-    [ "POS", "INT_VALUE", "DE", "ID" ],
-    [ "ID" ]
+
+  "<INIT_ARRAY>": [
+    ["<VALOR>", "<VALOR'>"]
   ],
-  "<FUNCIONS>": [
-    [ "<CREA_FUNCIO>", "<FUNCIONS>" ],
-    [ "ε" ]
+
+  "<VALOR'>": [
+    ["ARGUMENT_SEPARATOR", "<INIT_ARRAY>"],
+    ["ε"]
   ],
-  "<CREA_MAIN>": [
-    [ "INT", "MAIN", "<FUNC_BODY>" ]
+
+  "<VALOR>": [
+    ["INT_VALUE"],
+    ["FLOAT_VALUE"],
+    ["CHAR_VALUE"]
   ],
-  "<CREA_FUNCIO>": [
-    [ "<TIPUS>", "ID", "<FUNC_BODY>" ]
-  ],
-  "<FUNC_BODY>": [
-    [ "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ]
-  ],
-  "<HANDLE_RETURN>": [
-    [ "RETURN", "<VALOR_RETURN>", "LINE_DELIMITER" ]
-  ],
-  "<EXPRESSIO>": [
-    [ "<TERME>", "<EXPRESSIO'>" ]
-  ],
-  "<EXPRESSIO'>": [
-    [ "SUM", "<TERME>", "<EXPRESSIO'>" ],
-    [ "MINUS", "<TERME>", "<EXPRESSIO'>" ],
-    [ "ε" ]
-  ],
-  "<TERME>": [
-    [ "<FACTOR>", "<TERME'>" ]
-  ],
-  "<TERME'>": [
-    [ "MULTIPLY", "<FACTOR>", "<TERME'>" ],
-    [ "DIVISION", "<FACTOR>", "<TERME'>" ],
-    [ "ε" ]
-  ],
-  "<FACTOR>": [
-    [ "OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS" ],
-    [ "ID" ],
-    [ "<VALOR>" ]
-  ],
-  "<CONDICIONAL>": [
-    [
-      "IF", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS",
-      "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR", "<CONDICIONAL'>"
-    ]
-  ],
-  "<CONDICIONAL'>": [
-    [ "ELSE", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR" ],
-    [ "ε" ]
-  ],
-  "<CONDICIO>": [
-    [ "<COMPARACIO>", "<CONDICIO'>" ]
-  ],
-  "<CONDICIO'>": [
-    [ "<TOKEN_CONCATENACIO>", "<CONDICIO>" ],
-    [ "ε" ]
-  ],
-  "<COMPARACIO>": [
-    [ "<ELEMENT>", "<COMPARACIO'>" ]
-  ],
-  "<COMPARACIO'>": [
-    [ "<TOKEN_CONDICIONAL>", "<ELEMENT>" ],
-    [ "ε" ]
-  ],
-  "<ELEMENT>": [
-    [ "ID" ],
-    [ "<VALOR>" ]
-  ],
-  "<TOKEN_CONDICIONAL>": [
-    [ "EQUAL_COMPARATION" ],
-    [ "DIFFERENT" ],
-    [ "BIGGER" ],
-    [ "LOWER" ],
-    [ "BIGGER_EQUAL" ],
-    [ "LOWER_EQUAL" ],
-    [ "ε" ]
-  ],
-  "<TOKEN_CONCATENACIO>": [
-    [ "AND" ],
-    [ "OR" ],
-    [ "ε" ]
-  ],
-  "<BUCLE>": [
-    [
-      "BUCLE", "OPEN_PARENTESIS", "<CONDICIO>", "CLOSE_PARENTESIS",
-      "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR"
-    ]
-  ],
+
   "<BODY>": [
-    [ "<CONTENT>", "<BODY'>" ]
+    ["<CONTENT>", "<BODY'>"]
   ],
+
   "<BODY'>": [
-    [ "<CONTENT>", "<BODY'>" ],
-    [ "ε" ]
+    ["<CONTENT>", "<BODY'>"],
+    ["ε"]
   ],
+
   "<CONTENT>": [
-    [ "<DESIGNACIO>" ],
-    [ "<EXPRESSIO>", "LINE_DELIMITER" ],
-    [ "<CONDICIONAL>" ],
-    [ "<BUCLE>" ],
-    [ "<CALL_FUNCIO>" ],
-    [ "<HANDLE_RETURN>" ],
-    [ "LINE_DELIMITER" ]
+    ["POS", "INT_VALUE", "DE", "ID", "EQUAL_ASSIGNATION", "<EXPRESSIO>", "LINE_DELIMITER"],
+    ["ID", "<ID_CONTENT>"],
+    ["IF", "OPEN_PARENTHESIS", "<CONDICIO>", "CLOSE_PARENTHESIS", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR", "<CONDICIONAL'>"],
+    ["BUCLE", "OPEN_PARENTHESIS", "<CONDICIO>", "CLOSE_PARENTHESIS", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR"],
+    ["RETURN", "<EXPRESSIO>", "LINE_DELIMITER"],
+    ["LINE_DELIMITER"]
   ],
-  "<CALL_FUNCIO>": [
-    [ "ID", "OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER" ]
+
+  "<ID_CONTENT>": [
+    ["EQUAL_ASSIGNATION", "<EXPRESSIO>", "LINE_DELIMITER"],
+    ["OPEN_PARENTHESIS", "CLOSE_PARENTHESIS", "LINE_DELIMITER"],
+    ["<POST_ID_EXPR>", "LINE_DELIMITER"]
+  ],
+
+  "<POST_ID_EXPR>": [
+    ["<TERME'>", "<EXPRESSIO'>"]
+  ],
+
+  "<EXPRESSIO>": [
+    ["<TERME>", "<EXPRESSIO'>"]
+  ],
+
+  "<EXPRESSIO'>": [
+    ["SUM", "<TERME>", "<EXPRESSIO'>"],
+    ["MINUS", "<TERME>", "<EXPRESSIO'>"],
+    ["ε"]
+  ],
+
+  "<TERME>": [
+    ["<FACTOR>", "<TERME'>"]
+  ],
+
+  "<TERME'>": [
+    ["MULTIPLY", "<FACTOR>", "<TERME'>"],
+    ["DIVISION", "<FACTOR>", "<TERME'>"],
+    ["ε"]
+  ],
+
+  "<FACTOR>": [
+    ["OPEN_PARENTESIS", "<EXPRESSIO>", "CLOSE_PARENTESIS"],
+    ["ID"],
+    ["<VALOR>"]
+  ],
+
+  "<CONDICIONAL>": [
+    ["IF", "OPEN_PARENTHESIS", "<CONDICIO>", "CLOSE_PARENTHESIS", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR", "<CONDICIONAL'>"]
+  ],
+
+  "<CONDICIONAL'>": [
+    ["ELSE", "OPEN_CLAUDATOR", "<BODY>", "CLOSE_CLAUDATOR"],
+    ["ε"]
+  ],
+
+  "<CONDICIO>": [
+    ["<COMPARACIO>", "<CONDICIO'>"]
+  ],
+
+  "<CONDICIO'>": [
+    ["<TOKEN_CONCATENACIO>", "<CONDICIO>"],
+    ["ε"]
+  ],
+
+  "<COMPARACIO>": [
+    ["<ELEMENT>", "<COMPARACIO'>"]
+  ],
+
+  "<COMPARACIO'>": [
+    ["<TOKEN_CONDICIONAL>", "<ELEMENT>"],
+    ["ε"]
+  ],
+
+  "<ELEMENT>": [
+    ["ID"],
+    ["<VALOR>"]
+  ],
+
+  "<TOKEN_CONDICIONAL>": [
+    ["EQUAL_COMPARATION"],
+    ["DIFFERENT"],
+    ["BIGGER"],
+    ["LOWER"],
+    ["BIGGER_EQUAL"],
+    ["LOWER_EQUAL"]
+  ],
+
+  "<TOKEN_CONCATENACIO>": [
+    ["AND"],
+    ["OR"]
   ]
 }

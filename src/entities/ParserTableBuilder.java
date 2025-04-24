@@ -11,7 +11,6 @@ public class ParserTableBuilder {
     private Map<String, Set<String>> firstSets;
     private Map<String, Set<String>> followSets;
 
-    // Ajusta estos símbolos a tu conveniencia
     private static final String END_MARKER = "$";
     private static final String EPSILON = "ε";
 
@@ -33,6 +32,9 @@ public class ParserTableBuilder {
 
         initParsingTable();
         fillParsingTable();
+
+        // Opcional: imprimir tabla para debug
+        printingTable();
     }
 
     /**
@@ -90,10 +92,8 @@ public class ParserTableBuilder {
             }
         } while (changed);
 
-        first.forEach((nt, fset) ->
-                System.out.println("FIRST(" + nt + ") = " + fset)
-        );
-
+        System.out.println("\n<< FIRST >>\n");
+        first.forEach((nt, fset) -> System.out.println("FIRST(" + nt + ") = " + fset));
         return first;
     }
 
@@ -146,10 +146,8 @@ public class ParserTableBuilder {
             }
         } while (changed);
 
-        follow.forEach((nt, f) ->
-                System.out.printf("FOLLOW(%s) = %s%n", nt, f)
-        );
-
+        System.out.println("\n<< FOLLOW >>\n");
+        follow.forEach((nt, f) -> System.out.printf("FOLLOW(%s) = %s%n", nt, f));
         return follow;
     }
 
@@ -163,35 +161,26 @@ public class ParserTableBuilder {
     }
 
     private void fillParsingTable() {
-        // Recopilar terminales definidos en el diccionario
+        // Conjunto de terminales (tokens) + marcador final
         Set<String> terminals = new HashSet<>(dictionary.getTokenPatterns().keySet());
         terminals.add(END_MARKER);
 
         for (String A : grammarRules.keySet()) {
-            List<List<String>> productions = grammarRules.get(A);
             Map<String, List<String>> row = parsingTable.get(A);
-
-            for (List<String> prod : productions) {
+            for (List<String> prod : grammarRules.get(A)) {
                 Set<String> firstAlpha = computeFirstOfSequence(prod);
-
-                // 1) Para cada terminal t ∈ FIRST(α) \ {ε}, tabla[A][t] = α
+                // 1) FIRST(α) \ {ε}
                 for (String t : firstAlpha) {
-                    if (EPSILON.equals(t)) continue;
-                    // Si ya había algo, lanzamos excepción de conflicto LL(1)
+                    if (EPSILON.equals(t) || !terminals.contains(t)) continue;
                     if (row.containsKey(t)) {
-                        throw new RuntimeException(
-                                "Tabla LL(1) conflictiva: " + A + " / " + t);
+                        throw new RuntimeException("Tabla LL(1) conflictiva: " + A + " / " + t);
                     }
                     row.put(t, prod);
                 }
-
-                // 2) Si ε ∈ FIRST(α), para cada b ∈ FOLLOW(A), tabla[A][b] = α **sólo si** no existe**
+                // 2) Si ε ∈ FIRST(α), usar FOLLOW(A)
                 if (firstAlpha.contains(EPSILON)) {
                     for (String b : followSets.get(A)) {
-                        if (row.containsKey(b)) {
-                            // ya había una producción para b, la dejamos
-                            continue;
-                        }
+                        if (!terminals.contains(b) || row.containsKey(b)) continue;
                         row.put(b, prod);
                     }
                 }
@@ -199,13 +188,9 @@ public class ParserTableBuilder {
         }
     }
 
-    /**
-     * Calcula FIRST de una secuencia de símbolos.
-     */
     private Set<String> computeFirstOfSequence(List<String> symbols) {
         Set<String> result = new HashSet<>();
         boolean allEpsilon = true;
-
         for (String sym : symbols) {
             Set<String> symFirst;
             if (firstSets.containsKey(sym)) {
@@ -214,7 +199,6 @@ public class ParserTableBuilder {
                 symFirst = new HashSet<>();
                 symFirst.add(sym);
             }
-
             if (symFirst.contains(EPSILON)) {
                 symFirst.remove(EPSILON);
                 result.addAll(symFirst);
@@ -224,10 +208,16 @@ public class ParserTableBuilder {
                 break;
             }
         }
-
-        if (allEpsilon) {
-            result.add(EPSILON);
-        }
+        if (allEpsilon) result.add(EPSILON);
         return result;
+    }
+
+    // Método opcional para debug
+    private void printingTable() {
+        System.out.println("\n<< LL(1) TABLE >>");
+        parsingTable.forEach((nt, row) -> {
+            System.out.println("NonTerminal: " + nt);
+            row.forEach((t, prod) -> System.out.println("  [" + t + "] -> " + prod));
+        });
     }
 }
