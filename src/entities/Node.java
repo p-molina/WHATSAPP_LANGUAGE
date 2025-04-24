@@ -1,27 +1,50 @@
 package entities;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
-    private Token father;
+    private String symbol;
+    private Token token;
     private List<Node> children;
 
-    public Node(Token token) {}
-
-    public Token getFather() {
-        return father;
+    public Node(String symbol) {
+        this.symbol = symbol;
+        this.children = new ArrayList<>();
     }
 
-    public void setFather(Token father) {
-        this.father = father;
+    public Node(Token token) {
+        this.token = token;
+        this.symbol = token.getType();
+        this.children = new ArrayList<>();
     }
 
-    public List<Node> getChildren() {
-        return children;
+    public String getSymbol() { return symbol; }
+    public Token getToken() { return token; }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
-    public void setChildren(List<Node> children) {
-        this.children = children;
+    public void setToken(Token token) {
+        this.token = token;
+        if (token != null) {
+            this.symbol = token.getType();
+        }
     }
 
+    public List<Node> getChildren() { return children; }
+    public void addChild(Node child) {
+        children.add(child);
+    }
+
+    @Override
+    public String toString() {
+        if (token != null) {
+            return "Terminal(" + token.getType() + ": " + token.getLexeme() + ")";
+        } else {
+            return "NonTerminal(" + symbol + ")";
+        }
+    }
 }
+
