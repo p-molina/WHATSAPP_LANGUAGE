@@ -1,5 +1,4 @@
 grammar WhatsappLang;
-options { k = 1; }
 
 
 axioma: vars_globals funcions crea_main EOF;
@@ -116,4 +115,3 @@ CHAR_VALUE: '\''[a-zA-Z]'\'';
 ID: [a-zA-Z][a-zA-Z0-9]*;
 
 WS: [ \t\r\n]+ -> skip;
-COMMENT: '///' ~[\r\n]* -> skip;
