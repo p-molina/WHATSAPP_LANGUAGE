@@ -8,6 +8,7 @@ public class Node {
     private Token token;
     private List<Node> children;
 
+
     public Node(String symbol) {
         this.symbol = symbol;
         this.children = new ArrayList<>();
@@ -47,4 +48,3 @@ public class Node {
         }
     }
 }
-

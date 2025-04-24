@@ -1,47 +1,42 @@
-import SemanticAnalyzer.SampleTreeBuilder;
-import SemanticAnalyzer.SemanticAnalyzer;
+import ParserAnalyzer.ParserAnalyzer;
 import entities.Dictionary;
-import LexicalAnalyzer.LexicalAnalyzer;
+import entities.Grammar;
 import entities.Node;
-import entities.Token;
+import entities.ParserTableBuilder;
+import LexicalAnalyzer.LexicalAnalyzer;
+
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            // Lexical analysis
-            System.out.println("\n-------------------------------------");
-            System.out.println("Starting lexical analysis...");
             Dictionary dict = new Dictionary("resources/diccionari.json");
+            Grammar grammar = new Grammar("resources/grammar.json");
+
+            ParserTableBuilder builder = new ParserTableBuilder(dict, grammar);
+            builder.buildParsingTable();
+
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-
             lexer.tokenize("resources/whatsappFile.txt");
-            Token token;
-            while ((token = lexer.getNextToken()) != null) {
-                System.out.println(token);
-            }
-            System.out.println("Lexical analysis passed!");
-            System.out.println("-------------------------------------\n");
 
+            ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
+            Node root = parser.parse(lexer);
 
-            //Sintactic analysis (simulation)
-            System.out.println("\n-------------------------------------");
-            System.out.println("Starting syntactic analysis...");
-            Node root = SampleTreeBuilder.createSampleTree();
-            System.out.println("Syntactic analysis passed!");
-            System.out.println("-------------------------------------\n");
-
-
-            // Semantic analysis
-            System.out.println("\n-------------------------------------");
-            System.out.println("Starting semantic analysis...");
-            SemanticAnalyzer analyzer = new SemanticAnalyzer(root);
-            analyzer.analyze();
-            System.out.println("Semantic analysis passed!");
-            System.out.println("-------------------------------------\n");
-
+            System.out.println("¡Parseo completado sin errores! Árbol sintáctico:");
+            printTree(root, "", true);
 
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            System.err.println("Error durante el parseo:");
+            e.printStackTrace();
+        }
+    }
+
+    private static void printTree(Node node, String prefix, boolean isTail) {
+        System.out.println(prefix + (isTail ? "└── " : "├── ") + node);
+        List<Node> children = node.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            boolean last = (i == children.size() - 1);
+            printTree(children.get(i), prefix + (isTail ? "    " : "│   "), last);
         }
     }
 }
