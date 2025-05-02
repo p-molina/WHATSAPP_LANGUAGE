@@ -1,123 +1,187 @@
 grammar WhatsappLang;
 
-axioma: unit_list EOF;
+// ---------------------
+// Parser rules
+// ---------------------
 
-unit_list: unit unit_list | ;
+axioma
+    : unidadLista EOF
+    ;
 
-unit: tipus unit_tail;
+unidadLista
+    : unidad unidadLista
+    | /* ε */
+    ;
 
-unit_tail
-    : MAIN OPEN_CLAUDATOR body CLOSE_CLAUDATOR
-    | ID decl_or_func_tail;
+unidad
+    : tipo unidadSufijo
+    ;
 
-decl_or_func_tail
-    : EQUAL_ASSIGNATION expressio LINE_DELIMITER
-    | OPEN_CLAUDATOR decl_or_func_tail_rest;
+unidadSufijo
+    : MAIN OPEN_CLAUDATOR bloque CLOSE_CLAUDATOR   # MainFunction
+    | ID declFuncSufijo                            # DeclarationOrFunction
+    ;
 
-decl_or_func_tail_rest
-    : init_array CLOSE_CLAUDATOR LINE_DELIMITER
-    | body CLOSE_CLAUDATOR;
+declFuncSufijo
+    : EQUAL_ASSIGNATION expresion LINE_DELIMITER   # VariableInitialization
+    | OPEN_CLAUDATOR declFuncCuerpo CLOSE_CLAUDATOR# FunctionBody
+    ;
 
-tipus: tipus_base
-     | ARRAY DE INT_VALUE tipus_base;
+declFuncCuerpo
+    : initArray LINE_DELIMITER                     # ArrayInitialization
+    | bloque                                       # FunctionInner
+    ;
 
-tipus_base: INT | FLOAT | CHAR;
+tipo
+    : tipoBase                                     # SimpleType
+    | ARRAY DE INT_VALUE tipoBase                  # ArrayType
+    ;
 
-init_array: valor valor_succ;
-valor_succ: ARGUMENT_SEPARATOR init_array | ;
-valor: INT_VALUE | FLOAT_VALUE | CHAR_VALUE;
+tipoBase
+    : INT                                          # IntType
+    | FLOAT                                        # FloatType
+    | CHAR                                         # CharType
+    ;
 
-body: content body_succ;
-body_succ: content body_succ | ;
+initArray
+    : valor valorSufijo                            # InitArrayElements
+    ;
 
-content
-    : POS INT_VALUE DE ID EQUAL_ASSIGNATION expressio LINE_DELIMITER
-    | ID id_content
-    | IF OPEN_PARENTESIS condicio CLOSE_PARENTESIS OPEN_CLAUDATOR body CLOSE_CLAUDATOR condicional_succ
-    | BUCLE OPEN_PARENTESIS condicio CLOSE_PARENTESIS OPEN_CLAUDATOR body CLOSE_CLAUDATOR
-    | RETURN expressio LINE_DELIMITER
-    | LINE_DELIMITER;
+valorSufijo
+    : ARGUMENT_SEPARATOR initArray                 # MoreArrayElements
+    | /* ε */                                       # EndArray
+    ;
 
-id_content
-    : EQUAL_ASSIGNATION expressio LINE_DELIMITER
-    | OPEN_PARENTESIS CLOSE_PARENTESIS LINE_DELIMITER
-    | post_id_expr LINE_DELIMITER;
+valor
+    : INT_VALUE                                    # IntLiteral
+    | FLOAT_VALUE                                  # FloatLiteral
+    | CHAR_VALUE                                   # CharLiteral
+    ;
 
-post_id_expr: terme_succ expressio_succ;
+bloque
+    : contenido bloqueSufijo                       # Block
+    ;
 
-expressio: terme expressio_succ;
-expressio_succ
-    : SUM terme expressio_succ
-    | MINUS terme expressio_succ
-    | ;
+bloqueSufijo
+    : contenido bloqueSufijo                       # MoreStatements
+    | /* ε */                                       # EndBlock
+    ;
 
-terme: factor terme_succ;
-terme_succ
-    : MULTIPLY factor terme_succ
-    | DIVISION factor terme_succ
-    | ;
+// El único cambio principal viene aquí:
+contenido
+    : tipo ID localDeclSufijo LINE_DELIMITER                     # LocalVariableDecl
+    | POS INT_VALUE DE ID EQUAL_ASSIGNATION expresion LINE_DELIMITER  # PosAssignment
+    | ID idContenido                                            # IdentifierStatement
+    | IF OPEN_PARENTHESIS condicion CLOSE_PARENTHESIS
+      OPEN_CLAUDATOR bloque CLOSE_CLAUDATOR elseSufijo          # IfStatement
+    | BUCLE OPEN_PARENTHESIS condicion CLOSE_PARENTHESIS
+      OPEN_CLAUDATOR bloque CLOSE_CLAUDATOR                     # LoopStatement
+    | RETURN expresion LINE_DELIMITER                            # ReturnStatement
+    | LINE_DELIMITER                                             # EmptyStatement
+    ;
+
+idContenido
+    : EQUAL_ASSIGNATION expresion LINE_DELIMITER     # AssignOrCall
+    | OPEN_PARENTHESIS CLOSE_PARENTHESIS LINE_DELIMITER  # CallNoArgs
+    | (SUM | MINUS | MULTIPLY | DIVISION) expresion LINE_DELIMITER  # ContinueWithArithmetic
+    ;
+
+// Eliminadas estas reglas recursivas para evitar lookahead >1
+// postExpresion, terminoSufijo, expresionSufijo
+
+expresion
+    : termino expresionSufijo
+    ;
+
+expresionSufijo
+    : SUM   termino expresionSufijo
+    | MINUS termino expresionSufijo
+    | /* ε */
+    ;
+
+termino
+    : factor terminoSufijo
+    ;
+
+terminoSufijo
+    : MULTIPLY factor terminoSufijo
+    | DIVISION factor terminoSufijo
+    | /* ε */
+    ;
 
 factor
-    : OPEN_PARENTESIS expressio CLOSE_PARENTESIS
-    | ID
-    | valor;
+    : OPEN_PARENTHESIS expresion CLOSE_PARENTHESIS     # ParenExpr
+    | ID                                               # IdFactor
+    | valor                                            # LiteralFactor
+    ;
 
-condicio: comparacio condicio_succ;
-condicio_succ: token_concatenacio condicio | ;
+elseSufijo
+    : ELSE OPEN_CLAUDATOR bloque CLOSE_CLAUDATOR    # ElseBlock
+    | /* ε */                                        # NoElse
+    ;
 
-comparacio: element comparacio_succ;
-comparacio_succ: token_condicional element | ;
+condicion
+    : comparacion ( (AND | OR) condicion )?         # Condition
+    ;
 
-element: ID | valor;
+comparacion
+    : elemento ( (EQUAL_COMPARATION | DIFFERENT
+                | BIGGER_EQUAL | LOWER_EQUAL
+                | BIGGER | LOWER)
+                elemento )?                         # Comparison
+    ;
 
-condicional_succ: ELSE OPEN_CLAUDATOR body CLOSE_CLAUDATOR | ;
+elemento
+    : ID                                            # IdElement
+    | valor                                         # LiteralElement
+    ;
 
-token_condicional
-    : EQUAL_COMPARATION
-    | DIFFERENT
-    | BIGGER
-    | LOWER
-    | BIGGER_EQUAL
-    | LOWER_EQUAL;
+localDeclSufijo
+    : EQUAL_ASSIGNATION expresion                   # LocalInit
+    | OPEN_CLAUDATOR initArray CLOSE_CLAUDATOR      # LocalArrayInit
+    | /* ε */                                        # LocalNoInit
+    ;
 
-token_concatenacio: AND | OR;
+// ---------------------
+// Lexer rules
+// ---------------------
 
-// LEXER RULES
-INT: 'num';
-FLOAT: 'decimal';
-CHAR: 'lletra';
-ARRAY: 'textaco';
-MAIN: 'xat';
-RETURN: 'xinpum';
-LINE_DELIMITER: 'xd';
-OPEN_PARENTESIS: '¿';
-CLOSE_PARENTESIS: '?';
-OPEN_CLAUDATOR: 'jajaj';
-CLOSE_CLAUDATOR: 'jejej';
-IF: 'bro';
-ELSE: 'sino';
-BUCLE: 'tombarella';
-POS: 'pos';
-DE: 'de';
+INT             : 'num';
+FLOAT           : 'decimal';
+CHAR            : 'lletra';
+ARRAY           : 'textaco';
+MAIN            : 'xat';
+RETURN          : 'xinpum';
+LINE_DELIMITER  : 'xd';
+OPEN_PARENTHESIS: '¿';
+CLOSE_PARENTHESIS: '?';
+OPEN_CLAUDATOR  : 'jajaj';
+CLOSE_CLAUDATOR : 'jejej';
+IF              : 'bro';
+ELSE            : 'sino';
+BUCLE           : 'tombarella';
+POS             : 'pos';
+DE              : 'de';
 ARGUMENT_SEPARATOR: 'i';
 
 EQUAL_ASSIGNATION: '->';
-EQUAL_COMPARATION: '=';
-DIFFERENT: '!=';
-BIGGER: '>';
-LOWER: '<';
-BIGGER_EQUAL: '>=';
-LOWER_EQUAL: '<=';
-SUM: '+';
-MINUS: '-';
-MULTIPLY: '*';
-DIVISION: '/';
-AND: '&';
-OR: '|';
+EQUAL_COMPARATION : '=';
+DIFFERENT         : '!=';
+BIGGER            : '>';
+LOWER             : '<';
+BIGGER_EQUAL      : '>=';
+LOWER_EQUAL       : '<=';
+SUM               : '+';
+MINUS             : '-';
+MULTIPLY          : '*';
+DIVISION          : '/';
+AND               : '&';
+OR                : '|';
 
-INT_VALUE: [0-9]+;
-FLOAT_VALUE: [0-9]+ '.' [0-9]+;
-CHAR_VALUE: '\''[a-zA-Z]'\'';
-ID: [a-zA-Z][a-zA-Z0-9]*;
+INT_VALUE   : [0-9]+;
+FLOAT_VALUE : [0-9]+'.'[0-9]+;
+CHAR_VALUE  : '\'' [a-zA-Z] '\'';
+ID          : [a-zA-Z][a-zA-Z0-9]*;
 
-WS: [ \t\r\n]+ -> skip;
+WS      : [ \t\r\n]+ -> skip;
+COMMENT : '///' ~[\r\n]* -> skip;
