@@ -4,11 +4,11 @@ package entities;
 public class Symbol {
     private final String name;
     private final String type;
-    private final String scope;
+    private final int scope;
     private final int line;
     private final int column;
 
-    public Symbol(String name, String type, String scope, int line, int column) {
+    public Symbol(String name, String type, int scope, int line, int column) {
         this.name   = name;
         this.type   = type;
         this.scope  = scope;
@@ -18,7 +18,7 @@ public class Symbol {
 
     public String getName()   { return name; }
     public String getType()   { return type; }
-    public String getScope()  { return scope; }
+    public int getScope()  { return scope; }
     public int getLine()   { return line; }
     public int getColumn() { return column; }
 
