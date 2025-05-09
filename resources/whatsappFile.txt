@@ -1,7 +1,13 @@
 num a -> 5 xd
 decimal b -> 3.14 xd
 lletra c -> 'z' xd
-textaco de 3 num arr jajaj 1 i 2 i 3 jejej xd
+
+num suma jajaj
+    num d -> 6 xd
+
+    resultat -> a + d xd
+    xinpum resultat xd
+jejej
 
 decimal mitjana jajaj
     tombarella ¿ a < 10 ? jajaj
