@@ -35,6 +35,14 @@ num suma jajaj
     xinpum a xd
 jejej
 
+num declaracioDins jajaj
+    num a -> 5 xd
+    decimal b -> 3.14 xd
+    lletra c -> 'z' xd
+    textaco de 3 num arr jajaj 1 i 2 i 3 jejej xd
+    xinpum a xd
+jejej
+
 num xat jajaj
     a -> suma xd
     b -> mitjana xd

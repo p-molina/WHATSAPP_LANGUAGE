@@ -23,7 +23,6 @@ public class Main {
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
             Node root = parser.parse(lexer);
 
-            //  System.out.println("¡Parseo completado sin errores! Árbol sintáctico:");
             printTree(root, "", true);
 
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
