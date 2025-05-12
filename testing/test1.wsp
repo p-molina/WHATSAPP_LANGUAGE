@@ -4,28 +4,26 @@ lletra c -> 'z' xd
 
 num suma jajaj
     num d -> 6 xd
-
-    resultat -> a + d xd
-    xinpum resultat xd
+    xinpum a + d xd
 jejej
 
-decimal mitjana jajaj
+num mitjana jajaj
     tombarella ¿ a < 10 ? jajaj
         a -> a + 1 xd
     jejej
-    xinpum 2.718 xd
-jejej
-
-decimal opComplex jajaj
-    a -> ¿ ¿ a + 5 ? * b ? / 2 xd
     xinpum a xd
 jejej
 
-decimal opComplex1 jajaj
-    xinpum ¿ ¿ a + 5 ? * b ? / 2 xd
+decimal opComplex jajaj
+    a -> ¿ ¿ a + 5 ? * a ? / 2 xd
+    xinpum b xd
 jejej
 
-num suma jajaj
+decimal opComplex1 jajaj
+    xinpum ¿ ¿ b + 5 ? * b ? / 2 xd
+jejej
+
+num suma1 jajaj
     bro ¿ a = 5 ? jajaj
         a -> a + 5 xd
     jejej
@@ -36,16 +34,19 @@ num suma jajaj
 jejej
 
 num declaracioDins jajaj
-    num a -> 5 xd
-    decimal b -> 3.14 xd
-    lletra c -> 'z' xd
-    textaco de 3 num arr jajaj 1 i 2 i 3 jejej xd
+    num aa -> 5 xd
+    decimal bb -> 3.14 xd
+    lletra cc -> 'z' xd
+    textaco de 3 num arrr jajaj 1 i 2 i 3 jejej xd
     xinpum a xd
 jejej
 
 num xat jajaj
     a -> suma xd
-    b -> mitjana xd
-    pos 2 de arr -> 99 xd
+    b -> opComplex1 xd
+    num aa -> 5 xd
+    decimal bb -> 3.14 xd
+    lletra cc -> 'z' xd
+    textaco de 3 num arrr jajaj 1 i 2 i 3 jejej xd
     xinpum 0 xd
 jejej

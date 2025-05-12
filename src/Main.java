@@ -5,7 +5,6 @@ import entities.Grammar;
 import entities.Node;
 import entities.ParserTableBuilder;
 import LexicalAnalyzer.LexicalAnalyzer;
-import SemanticAnalyzer.SampleTreeBuilder;
 
 import java.util.*;
 
@@ -19,13 +18,12 @@ public class Main {
             builder.buildParsingTable();
 
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-            lexer.tokenize("resources/whatsappFile.txt");
+            lexer.tokenize("testing/test1.wsp");
 
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
             Node root = parser.parse(lexer);
-
             printTree(root, "", true);
-            //Node roots = SampleTreeBuilder.createSampleTree();
+
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
             semanticAnalyzer.analyze();
 
