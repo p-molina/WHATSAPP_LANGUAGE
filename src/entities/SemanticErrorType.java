@@ -14,7 +14,6 @@ public enum SemanticErrorType {
     FUNCTION_NAME_CONFLICT("Function '%s' cannot have same name as a variable."),
     VARIABLE_NAME_CONFLICT("Variable '%s' cannot have same name as a function."),
     FUNCTION_NOT_DECLARED("Function '%s' not declared."),
-    FUNCTION_ARGUMENTS_MISMATCH("Function '%s' expects %d arguments but got %d."),
     FUNCTION_PARAMETER_TYPE("Parameter %d of function '%s' expected type '%s', got '%s'."),
     RETURN_OUTSIDE_FUNCTION("'xinpum' (return) is only valid inside functions."),
     SYMBOL_REDECLARED_IN_SCOPE("Symbol '%s' already declared in scope %d."),

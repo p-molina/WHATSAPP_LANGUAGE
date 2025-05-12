@@ -1,14 +1,29 @@
 package SemanticAnalyzer;
 
-import entities.*;
-import java.util.*;
+import entities.Node;
+import entities.SymbolTable;
+import entities.Token;
 import entities.SemanticErrorType;
+import entities.Symbol;
+
+import java.util.*;
 
 public class SemanticAnalyzer {
     private final Node root;
-    private final SymbolTable symbolTable = new SymbolTable();
-    private int currentScope = 0;
-    private int scopeCounter = 1; // scope 0 for globals, functions start from 1
+    private final Map<String, String> symbolTable = new HashMap<>();
+    private SymbolTable symbolTableBona = new SymbolTable();
+    private int actualScope = 0;
+
+    private static class FunctionSignature {
+        String returnType;
+        List<String> paramTypes;
+        FunctionSignature(String returnType, List<String> paramTypes) {
+            this.returnType = returnType;
+            this.paramTypes = paramTypes;
+        }
+    }
+
+    private final Map<String, FunctionSignature> functionsDeclared = new HashMap<>();
 
     private boolean insideFunction = false;
     private boolean mainDeclared = false;
@@ -22,90 +37,106 @@ public class SemanticAnalyzer {
     public void analyze() {
         traverse(root);
         if (!mainDeclared) {
-            throw new RuntimeException(SemanticErrorType.MISSING_MAIN.format());
+            throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
         }
-        symbolTable.printTable();
+        symbolTableBona.printTable();
     }
 
     private void traverse(Node node) {
         if (node == null) return;
-        String sym = normalizeSymbol(node.getSymbol());
 
-        switch (sym) {
-            case "UNIT" -> handleUnit(node);
-            case "DECLARACIO" -> handleDeclaration(node);
-            case "CREA_FUNCIO", "CREA_MAIN" -> { return; }
-            case "ASSIGNACIO" -> handleAssignment(node);
-            case "XINPUM" -> handleReturn(node);
-            case "CALL_FUNCIO" -> handleFunctionCall(node);
-            case "CONTENT" -> handleContent(node);
-            default -> traverseChildren(node);
-        }
-    }
-
-    private void traverseChildren(Node node) {
-        for (Node child : node.getChildren()) traverse(child);
-    }
-
-    private String normalizeSymbol(String sym) {
+        String sym = node.getSymbol();
         if (sym.startsWith("<") && sym.endsWith(">")) {
-            return sym.substring(1, sym.length() - 1);
+            sym = sym.substring(1, sym.length()-1);
         }
-        return sym;
+        //System.out.println("Visiting node: " + sym);
+
+        boolean traverseChildren = true;
+        switch (sym) {
+            case "UNIT": handleUnit(node); return;
+            case "DECLARACIO": handleDeclaration(node); break;
+            case "CREA_FUNCIO": handleFunction(node); traverseChildren = false; break;
+            case "CREA_MAIN": handleMain(node); traverseChildren = false; break;
+            case "ASSIGNACIO": handleAssignment(node); break;
+            case "XINPUM": handleReturn(node); break;
+            case "CALL_FUNCIO": handleFunctionCall(node); break;
+            case "CONTENT": handleContent(node); return;
+        }
+        if (traverseChildren) {
+            for (Node c: node.getChildren()) traverse(c);
+        }
     }
 
     private void handleContent(Node node) {
         Node first = node.getChildren().get(0);
         Token tok = first.getToken();
-        if (tok == null) { traverseChildren(node); return; }
-        switch (tok.getType()) {
-            case "ID" -> handleIdContent(node, first);
-            case "POS" -> handleArrayAssignment(node);
-            case "RETURN" -> handleReturnStatement(node);
-            default -> traverseChildren(node);
+        if (tok == null) {
+            traverseChildren(node); return;
+        }
+
+        switch(tok.getType()) {
+            case "ID": {
+                Node tail = node.getChildren().get(1);
+                Token tailTok = tail.getChildren().get(0).getToken();
+                String name = first.getToken().getLexeme();
+                if (tailTok != null && "EQUAL_ASSIGNATION".equals(tailTok.getType())) {
+                    if (!symbolTable.containsKey(name)) {
+                        error(first, SemanticErrorType.VARIABLE_NOT_DECLARED, name);
+                    }
+                    String expected = symbolTable.get(name);
+                    Node expr = tail.getChildren().get(1);
+                    String actual = getExpressionType(expr);
+                    if (!expected.equals(actual)) {
+                        error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
+                    }
+                } else if (tailTok != null && "OPEN_PARENTESIS".equals(tailTok.getType())) {
+                    handleFunctionCall(node);
+                } else {
+                    traverseChildren(node);
+                }
+                break;
+            }
+            case "POS": {
+                Node idx = node.getChildren().get(1);
+                Node arrId = node.getChildren().get(3);
+                String arrName = arrId.getToken().getLexeme();
+                if (!symbolTable.containsKey(arrName)) {
+                    error(arrId, SemanticErrorType.VARIABLE_NOT_DECLARED, arrName);
+                }
+                String t = symbolTable.get(arrName);
+                if (!t.startsWith("ARRAY")) {
+                    error(arrId, SemanticErrorType.NOT_AN_ARRAY, arrName);
+                }
+                String idxType = getExpressionType(idx);
+                if (!"INT".equals(idxType)) {
+                    error(idx, SemanticErrorType.ARRAY_INDEX_TYPE, idxType);
+                }
+                String base = t.substring(t.indexOf("]")+1);
+                if (base.endsWith("VALUE")) base = base.replace("_VALUE","");
+                Node valExpr = node.getChildren().get(5);
+                String valType = getExpressionType(valExpr);
+                if (!base.equals(valType)) {
+                    error(node, SemanticErrorType.ARRAY_ASSIGN_TYPE, valType, base);
+                }
+                break;
+            }
+            case "RETURN": {
+                Node expr = node.getChildren().get(1);
+                if (!insideFunction) {
+                    error(first, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
+                }
+                String rt = getExpressionType(expr);
+                if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType)) {
+                    error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
+                }
+                break;
+            }
+            default: traverseChildren(node);
         }
     }
 
-    private void handleIdContent(Node node, Node idNode) {
-        Node tail = node.getChildren().get(1);
-        Token tailTok = tail.getChildren().get(0).getToken();
-        String name = idNode.getToken().getLexeme();
-
-        if (tailTok != null && "EQUAL_ASSIGNATION".equals(tailTok.getType())) {
-            String expected = lookupType(name);
-            if (expected == null) error(idNode, SemanticErrorType.VARIABLE_NOT_DECLARED.format(name));
-            String actual = getExpressionType(tail.getChildren().get(1));
-            if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN.format(actual, expected));
-        } else if (tailTok != null && "OPEN_PARENTESIS".equals(tailTok.getType())) {
-            handleFunctionCall(node);
-        } else {
-            traverseChildren(node);
-        }
-    }
-
-    private void handleArrayAssignment(Node node) {
-        Node idx = node.getChildren().get(1);
-        Node arrId = node.getChildren().get(3);
-        String arrName = arrId.getToken().getLexeme();
-
-        String t = lookupType(arrName);
-        if (t == null) error(arrId, SemanticErrorType.VARIABLE_NOT_DECLARED.format(arrName));
-        if (!t.startsWith("ARRAY")) error(arrId, SemanticErrorType.NOT_AN_ARRAY.format(arrName));
-
-        String idxType = getExpressionType(idx);
-        if (!"INT".equals(idxType)) error(idx, SemanticErrorType.ARRAY_INDEX_TYPE.format(idxType));
-
-        String base = t.substring(t.indexOf("]") + 1).replace("_VALUE", "");
-        String valType = getExpressionType(node.getChildren().get(5));
-        if (!base.equals(valType)) error(node, SemanticErrorType.ARRAY_ASSIGN_TYPE.format(valType, base));
-    }
-
-    private void handleReturnStatement(Node node) {
-        if (!insideFunction) error(node.getChildren().get(0), SemanticErrorType.RETURN_OUTSIDE_FUNCTION.format());
-        String rt = getExpressionType(node.getChildren().get(1));
-        if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType)) {
-            error(node, SemanticErrorType.RETURN_TYPE_MISMATCH.format(currentFunctionReturnType, rt));
-        }
+    private void traverseChildren(Node node) {
+        for (Node c: node.getChildren()) traverse(c);
     }
 
     private void handleUnit(Node unitNode) {
@@ -113,154 +144,222 @@ public class SemanticAnalyzer {
         Node tail = unitNode.getChildren().get(1);
         Node first = tail.getChildren().get(0);
 
-        if ("MAIN".equals(first.getToken().getType())) {
+        if (first.getToken() != null && "MAIN".equals(first.getToken().getType())) {
             processOriginalMain(unitNode, tipusNode, tail);
-        } else {
+        } else if (first.getToken() != null && "ID".equals(first.getToken().getType())) {
             Node idNode = first;
             Node declTail = tail.getChildren().get(1);
             Node declFirst = declTail.getChildren().get(0);
-
-            if ("EQUAL_ASSIGNATION".equals(declFirst.getToken().getType())) {
+            if (declFirst.getToken() != null && "EQUAL_ASSIGNATION".equals(declFirst.getToken().getType())) {
                 processOriginalDeclaration(unitNode, tipusNode, idNode, declTail);
-            } else {
+            } else if (declFirst.getToken() != null && "OPEN_CLAUDATOR".equals(declFirst.getToken().getType())) {
                 processOriginalFunction(unitNode, tipusNode, idNode, declTail);
             }
         }
     }
 
-    private void processOriginalMain(Node unitNode, Node tipusNode, Node tail) {
-        if (mainDeclared) error(unitNode, SemanticErrorType.MAIN_ALREADY_DEFINED.format());
+    private String getTypeFromTipus(Node tipusNode) {
+        Node first = tipusNode.getChildren().get(0);
+        if ("ARRAY".equals(first.getSymbol())) {
+            String size = tipusNode.getChildren().get(2).getToken().getLexeme();
+            Node baseNode = tipusNode.getChildren().get(3);
+            String baseType = baseNode.getChildren().get(0).getSymbol();
+            return "ARRAY[" + size + "]" + baseType;
+        } else {
+            Node baseNode = first.getChildren().get(0);
+            return baseNode.getSymbol();
+        }
+    }
 
-        mainDeclared = true;
+    private void processOriginalDeclaration(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
+        if (enteredAnyFunction && !insideFunction) {
+            error(unitNode, SemanticErrorType.FUNCTION_AFTER_MAIN);
+        }
+        String type = getTypeFromTipus(tipusNode);
+        String name = idNode.getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_ALREADY_DECLARED, name);
+        }
+        if (functionsDeclared.containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_NAME_CONFLICT, name);
+        }
+        symbolTable.put(name, type);
+        symbolTableBona.addSymbol(name, type, actualScope, idNode.getToken().getLine(), idNode.getToken().getColumn());
+
+        Node expr = declTail.getChildren().get(1);
+        String valueType = getExpressionType(expr);
+        if (!type.equals(valueType)) {
+            error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
+        }
+    }
+
+    private void processOriginalFunction(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
+        if (mainDeclared) {
+            error(unitNode, SemanticErrorType.FUNCTION_AFTER_MAIN);
+        }
         enteredAnyFunction = true;
-        currentFunctionReturnType = getTypeFromTipus(tipusNode);
+        String returnType = getTypeFromTipus(tipusNode);
+        String name = idNode.getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(idNode, SemanticErrorType.FUNCTION_NAME_CONFLICT, name);
+        }
+        functionsDeclared.put(name, new FunctionSignature(returnType, new ArrayList<>()));
+        symbolTableBona.addSymbol(name, returnType, actualScope, idNode.getToken().getLine(), idNode.getToken().getColumn());
+        currentFunctionReturnType = returnType;
         insideFunction = true;
-
-        Node bodyNode = tail.getChildren().get(2);
+        Node rest = declTail.getChildren().get(1);
+        Node bodyNode = rest.getChildren().get(0);
         traverse(bodyNode);
-
         insideFunction = false;
         currentFunctionReturnType = null;
     }
 
-    private void processOriginalDeclaration(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
-        String type = getTypeFromTipus(tipusNode);
-        String name = idNode.getToken().getLexeme();
-
-        if (lookupType(name) != null) error(idNode, SemanticErrorType.VARIABLE_ALREADY_DECLARED.format(name));
-
-        Token token = idNode.getToken();
-        symbolTable.addSymbol(name, type, currentScope, token.getLine(), token.getColumn());
-
-        String valueType = getExpressionType(declTail.getChildren().get(1));
-        if (!type.equals(valueType)) error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN.format(valueType, type));
-    }
-
-    private void processOriginalFunction(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
-        if (mainDeclared) error(unitNode, SemanticErrorType.FUNCTION_AFTER_MAIN.format());
-
-        String name = idNode.getToken().getLexeme();
-        if (lookupType(name) != null) error(idNode, SemanticErrorType.FUNCTION_NAME_CONFLICT.format(name));
-
-        String returnType = getTypeFromTipus(tipusNode);
-        Token token = idNode.getToken();
-
-        int functionScope = scopeCounter++;
-        symbolTable.addSymbol(name, "FUNC", functionScope, token.getLine(), token.getColumn());
-
-        currentFunctionReturnType = returnType;
-        insideFunction = true;
+    private void processOriginalMain(Node unitNode, Node tipusNode, Node tail) {
+        if (mainDeclared) {
+            error(unitNode, SemanticErrorType.MAIN_ALREADY_DEFINED);
+        }
+        mainDeclared = true;
         enteredAnyFunction = true;
-        currentScope = functionScope;
-
-        Node bodyNode = declTail.getChildren().get(1).getChildren().get(0);
+        currentFunctionReturnType = getTypeFromTipus(tipusNode);
+        insideFunction = true;
+        Node bodyNode = tail.getChildren().get(2);
         traverse(bodyNode);
-
-        currentScope = 0;
         insideFunction = false;
         currentFunctionReturnType = null;
     }
 
     private void handleDeclaration(Node node) {
-        String type = getTypeFromTipus(node);
+        if (enteredAnyFunction && !insideFunction) {
+            error(node, SemanticErrorType.FUNCTION_AFTER_MAIN);
+        }
+        String type;
+        if (node.getChildren().get(0).getSymbol().equals("ARRAY")) {
+            String size = node.getChildren().get(2).getToken().getLexeme();
+            String baseType = node.getChildren().get(3).getSymbol();
+            type = "ARRAY[" + size + "]" + baseType;
+        } else {
+            type = node.getChildren().get(0).getSymbol();
+        }
         String name = node.getChildren().get(1).getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(node, SemanticErrorType.VARIABLE_ALREADY_DECLARED, name);
+        }
+        if (functionsDeclared.containsKey(name)) {
+            error(node, SemanticErrorType.VARIABLE_NAME_CONFLICT, name);
+        }
+        symbolTable.put(name, type);
+        symbolTableBona.addSymbol(name, type, actualScope, node.getToken().getLine(), node.getToken().getColumn());
+    }
 
-        if (lookupType(name) != null) error(node, SemanticErrorType.VARIABLE_ALREADY_DECLARED.format(name));
+    private void handleFunction(Node node) {
+        if (mainDeclared) {
+            error(node, SemanticErrorType.FUNCTION_AFTER_MAIN);
+        }
+        enteredAnyFunction = true;
+        String name = node.getChildren().get(1).getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(node, SemanticErrorType.FUNCTION_NAME_CONFLICT, name);
+        }
+        String returnType = node.getChildren().get(0).getSymbol();
+        List<String> paramTypes = new ArrayList<>();
+        functionsDeclared.put(name, new FunctionSignature(returnType, paramTypes));
+        currentFunctionReturnType = returnType;
+        insideFunction = true;
+        for (Node child : node.getChildren()) traverse(child);
+        insideFunction = false;
+        currentFunctionReturnType = null;
+    }
 
-        Token token = node.getChildren().get(1).getToken();
-        symbolTable.addSymbol(name, type, currentScope, token.getLine(), token.getColumn());
+    private void handleMain(Node node) {
+        if (mainDeclared) {
+            error(node, SemanticErrorType.MAIN_ALREADY_DEFINED);
+        }
+        mainDeclared = true;
+        enteredAnyFunction = true;
+        currentFunctionReturnType = node.getChildren().get(0).getSymbol();
+        insideFunction = true;
+        for (Node child : node.getChildren()) traverse(child);
+        insideFunction = false;
+        currentFunctionReturnType = null;
     }
 
     private void handleAssignment(Node node) {
         Node assignPrim = node.getChildren().get(0);
-
         if (assignPrim.getChildren().get(0).getSymbol().equals("POS")) {
-            handleArrayAssignment(node);
+            Node indexNode = assignPrim.getChildren().get(1);
+            Node arrayIdNode = assignPrim.getChildren().get(3);
+            String arrayName = arrayIdNode.getToken().getLexeme();
+            if (!symbolTable.containsKey(arrayName)) {
+                error(arrayIdNode, SemanticErrorType.VARIABLE_NOT_DECLARED, arrayName);
+            }
+            String type = symbolTable.get(arrayName);
+            if (!type.startsWith("ARRAY")) {
+                error(arrayIdNode, SemanticErrorType.NOT_AN_ARRAY, arrayName);
+            }
+            String indexType = getExpressionType(indexNode);
+            if (!indexType.equals("INT")) {
+                error(indexNode, SemanticErrorType.ARRAY_INDEX_TYPE, indexType);
+            }
+            String baseTypeRaw = type.substring(type.indexOf("]") + 1);
+            String baseType = switch (baseTypeRaw) {
+                case "INT_VALUE" -> "INT";
+                case "FLOAT_VALUE" -> "FLOAT";
+                case "CHAR_VALUE" -> "CHAR";
+                default -> baseTypeRaw;
+            };
+            Node expr = node.getChildren().get(1);
+            String valueType = getExpressionType(expr);
+            if (!baseType.equals(valueType)) {
+                error(node, SemanticErrorType.ARRAY_ASSIGN_TYPE, valueType, baseType);
+            }
             return;
         }
 
-        String name = assignPrim.getChildren().get(0).getToken().getLexeme();
-        String expectedType = lookupType(name);
-        if (expectedType == null) error(assignPrim, SemanticErrorType.VARIABLE_NOT_DECLARED.format(name));
-
-        String actualType = getExpressionType(node.getChildren().get(1));
+        Node idNode = assignPrim.getChildren().get(0);
+        String name = idNode.getToken().getLexeme();
+        if (!symbolTable.containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_NOT_DECLARED, name);
+        }
+        String expectedType = symbolTable.get(name);
+        Node expr = node.getChildren().get(1);
+        String actualType = getExpressionType(expr);
         if (!expectedType.equals(actualType)) {
-            error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN.format(actualType, expectedType));
+            error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actualType, expectedType);
         }
     }
 
     private void handleReturn(Node node) {
-        if (!insideFunction) error(node, SemanticErrorType.RETURN_OUTSIDE_FUNCTION.format());
-
+        if (!insideFunction) {
+            error(node, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
+        }
         if (node.getChildren().size() > 1) {
             String retType = getExpressionType(node.getChildren().get(1));
             if (currentFunctionReturnType != null && !retType.equals(currentFunctionReturnType)) {
-                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH.format(currentFunctionReturnType, retType));
+                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
             }
         }
     }
 
     private void handleFunctionCall(Node node) {
-        String funcName = node.getChildren().get(0).getToken().getLexeme();
-        Symbol s = symbolTable.getSymbol(funcName, 0);
-        if (s == null || !s.getType().equals("FUNC")) {
-            error(node, SemanticErrorType.FUNCTION_NOT_DECLARED.format(funcName));
+        Token funcToken = node.getChildren().get(0).getToken();
+        String funcName = funcToken.getLexeme();
+        FunctionSignature sig = functionsDeclared.get(funcName);
+        if (sig == null) {
+            error(node, SemanticErrorType.FUNCTION_NOT_DECLARED, funcName);
         }
-
         List<String> argTypes = new ArrayList<>();
         for (int i = 1; i < node.getChildren().size(); i++) {
             Node child = node.getChildren().get(i);
-            String sym = child.getSymbol();
-            if (!List.of("OPEN_PARENTESIS", "CLOSE_PARENTESIS", "LINE_DELIMITER").contains(sym)) {
-                argTypes.add(getExpressionType(child));
-            }
+            if (child.getSymbol().equals("OPEN_PARENTESIS") || child.getSymbol().equals("CLOSE_PARENTESIS") || child.getSymbol().equals("LINE_DELIMITER"))
+                continue;
+            argTypes.add(getExpressionType(child));
         }
-
-        if (!argTypes.isEmpty()) {
-            error(node, SemanticErrorType.FUNCTION_ARGUMENTS_MISMATCH.format(funcName, 0, argTypes.size()));
+        if (argTypes.size() != sig.paramTypes.size()) {
+            throw new RuntimeException("[Line " + funcToken.getLine() + "] Function '" + funcName + "' expects " + sig.paramTypes.size() + " arguments but got " + argTypes.size());
         }
-    }
-
-    private void handleLocalDeclaration(Node node) {
-        String type = getTypeFromTipus(node.getChildren().get(0));
-        Token idToken = node.getChildren().get(1).getToken();
-        String name = idToken.getLexeme();
-
-        if (lookupType(name) != null) {
-            error(node, SemanticErrorType.VARIABLE_ALREADY_DECLARED.format(name));
-        }
-
-        symbolTable.addSymbol(name, type, currentScope, idToken.getLine(), idToken.getColumn());
-
-        Node suffixNode = node.getChildren().get(2);
-        if (suffixNode.getChildren().isEmpty()) return;
-
-        Node maybeAssign = suffixNode.getChildren().get(0);
-        if ("EQUAL_ASSIGNATION".equals(maybeAssign.getToken().getType())) {
-            Node expr = suffixNode.getChildren().get(1);
-            String valueType = getExpressionType(expr);
-            if (!type.equals(valueType)) {
-                error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN.format(valueType, type));
+        for (int i = 0; i < argTypes.size(); i++) {
+            if (!argTypes.get(i).equals(sig.paramTypes.get(i))) {
+                error(node, SemanticErrorType.FUNCTION_PARAMETER_TYPE, i + 1, funcName, sig.paramTypes.get(i), argTypes.get(i));
             }
         }
     }
@@ -274,24 +373,24 @@ public class SemanticAnalyzer {
                 case "FLOAT_VALUE": return "FLOAT";
                 case "CHAR_VALUE": return "CHAR";
                 case "ID": {
-                    String type = lookupType(lexeme);
-                    if (type != null) return type;
-                    Symbol s = symbolTable.getSymbol(lexeme, 0);
-                    if (s != null && s.getType().startsWith("FUNC->"))
-                        return s.getType().substring("FUNC->".length());
-                    error(node, SemanticErrorType.UNKNOWN_SYMBOL.format(lexeme));
+                    if (symbolTable.containsKey(lexeme)) return symbolTable.get(lexeme);
+                    if (functionsDeclared.containsKey(lexeme)) return functionsDeclared.get(lexeme).returnType;
+                    error(node, SemanticErrorType.UNKNOWN_SYMBOL, lexeme);
                 }
             }
         } else if (!node.getChildren().isEmpty()) {
             if (node.getChildren().size() == 3 && isOperator(node.getChildren().get(1))) {
                 String left = getExpressionType(node.getChildren().get(0));
                 String right = getExpressionType(node.getChildren().get(2));
-                if (!left.equals(right)) error(node, SemanticErrorType.EXPRESSION_TYPE_MISMATCH.format(left, right));
+                if (!left.equals(right)) {
+                    error(node, SemanticErrorType.EXPRESSION_TYPE_MISMATCH, left, right);
+                }
                 return left;
-            }
-            for (Node child : node.getChildren()) {
-                String type = getExpressionType(child);
-                if (!type.equals("UNKNOWN")) return type;
+            } else {
+                for (Node child : node.getChildren()) {
+                    String type = getExpressionType(child);
+                    if (!type.equals("UNKNOWN")) return type;
+                }
             }
         }
         return "UNKNOWN";
@@ -302,29 +401,19 @@ public class SemanticAnalyzer {
         return type.equals("SUM") || type.equals("MINUS") || type.equals("MULTIPLY") || type.equals("DIVISION");
     }
 
-    private String getTypeFromTipus(Node tipusNode) {
-        Node first = tipusNode.getChildren().get(0);
-        if ("ARRAY".equals(first.getSymbol())) {
-            String size = tipusNode.getChildren().get(2).getToken().getLexeme();
-            String baseType = tipusNode.getChildren().get(3).getChildren().get(0).getSymbol();
-            return "ARRAY[" + size + "]" + baseType;
-        }
-        return first.getChildren().get(0).getSymbol();
-    }
-
-    private String lookupType(String name) {
-        Symbol s = symbolTable.getSymbol(name, currentScope);
-        if (s == null) s = symbolTable.getSymbol(name, 0);
-        return s != null ? s.getType() : null;
-    }
-
-    private void error(Node node, String message) {
+    private void error(Node node, SemanticErrorType type, Object... args) {
         int line = -1;
-        if (node.getToken() != null) line = node.getToken().getLine();
-        else for (Node child : node.getChildren()) {
-            if (child.getToken() != null) { line = child.getToken().getLine(); break; }
+        if (node.getToken() != null) {
+            line = node.getToken().getLine();
+        } else {
+            for (Node child : node.getChildren()) {
+                if (child.getToken() != null) {
+                    line = child.getToken().getLine();
+                    break;
+                }
+            }
         }
-        throw new RuntimeException("[Line " + line + "] Semantic Error: " + message);
+        throw new RuntimeException("[Line " + line + "] " + type.format(args));
     }
-
 }
+
