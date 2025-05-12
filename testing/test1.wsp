@@ -33,6 +33,14 @@ num suma1 jajaj
     xinpum a xd
 jejej
 
+num declaracioDins jajaj
+    num aa -> 5 xd
+    decimal bb -> 3.14 xd
+    lletra cc -> 'z' xd
+    textaco de 3 num arrr jajaj 1 i 2 i 3 jejej xd
+    xinpum a xd
+jejej
+
 num xat jajaj
     a -> suma xd
     b -> opComplex1 xd
