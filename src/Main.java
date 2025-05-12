@@ -5,6 +5,7 @@ import entities.Grammar;
 import entities.Node;
 import entities.ParserTableBuilder;
 import LexicalAnalyzer.LexicalAnalyzer;
+import SemanticAnalyzer.SampleTreeBuilder;
 
 import java.util.*;
 
@@ -24,9 +25,9 @@ public class Main {
             Node root = parser.parse(lexer);
 
             printTree(root, "", true);
-
+            //Node roots = SampleTreeBuilder.createSampleTree();
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
-            //semanticAnalyzer.analyze();
+            semanticAnalyzer.analyze();
 
 
         } catch (Exception e) {

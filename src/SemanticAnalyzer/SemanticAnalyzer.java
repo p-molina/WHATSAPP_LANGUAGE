@@ -30,7 +30,6 @@ public class SemanticAnalyzer {
 
     public void analyze() {
         traverse(root);
-
         if (!mainDeclared) {
             throw new RuntimeException("Semantic Error: Missing main function 'xat'");
         }
@@ -39,21 +38,28 @@ public class SemanticAnalyzer {
     private void traverse(Node node) {
         if (node == null) return;
 
-        System.out.println("Visiting node: " + node);
+        // Normalize symbol
+        String sym = node.getSymbol();
+        if (sym.startsWith("<") && sym.endsWith(">")) {
+            sym = sym.substring(1, sym.length()-1);
+        }
+        System.out.println("Visiting node: " + sym);
 
-        boolean shouldTraverseChildren = true;
-
-        switch (node.getSymbol()) {
+        boolean traverseChildren = true;
+        switch (sym) {
+            case "UNIT":
+                handleUnit(node);
+                return;
             case "DECLARACIO":
                 handleDeclaration(node);
                 break;
             case "CREA_FUNCIO":
                 handleFunction(node);
-                shouldTraverseChildren = false;
+                traverseChildren = false;
                 break;
             case "CREA_MAIN":
                 handleMain(node);
-                shouldTraverseChildren = false;
+                traverseChildren = false;
                 break;
             case "ASSIGNACIO":
                 handleAssignment(node);
@@ -64,17 +70,204 @@ public class SemanticAnalyzer {
             case "CALL_FUNCIO":
                 handleFunctionCall(node);
                 break;
+            case "CONTENT":
+                handleContent(node);
+                return;
+            default:
+                break;
         }
+        if (traverseChildren) {
+            for (Node c: node.getChildren()) traverse(c);
+        }
+    }
 
-        if (shouldTraverseChildren) {
-            for (Node child : node.getChildren()) {
-                traverse(child);
+    private void handleContent(Node node) {
+        Node first = node.getChildren().get(0);
+        Token tok = first.getToken();
+        if (tok == null) {
+            // no terminal, dive in
+            traverseChildren(node);
+            return;
+        }
+        switch(tok.getType()) {
+            case "ID":
+                Node idNode = first;
+                Node tail = node.getChildren().get(1);
+                Token tailTok = tail.getChildren().get(0).getToken();
+                if (tailTok != null && "EQUAL_ASSIGNATION".equals(tailTok.getType())) {
+                    // simple assignment
+                    String name = idNode.getToken().getLexeme();
+                    if (!symbolTable.containsKey(name)) {
+                        error(idNode, "Variable '" + name + "' not declared.");
+                    }
+                    String expected = symbolTable.get(name);
+                    Node expr = tail.getChildren().get(1);
+                    String actual = getExpressionType(expr);
+                    if (!expected.equals(actual)) {
+                        error(node, "Type mismatch: cannot assign '" + actual + "' to '" + expected + "'.");
+                    }
+                } else if (tailTok != null && "OPEN_PARENTESIS".equals(tailTok.getType())) {
+                    // function call
+                    handleFunctionCall(node);
+                } else {
+                    traverseChildren(node);
+                }
+                break;
+            case "POS":
+                // array assignment
+                Node idx = node.getChildren().get(1);
+                Node arrId = node.getChildren().get(3);
+                String arrName = arrId.getToken().getLexeme();
+                if (!symbolTable.containsKey(arrName)) {
+                    error(arrId, "Array '" + arrName + "' not declared.");
+                }
+                String t = symbolTable.get(arrName);
+                if (!t.startsWith("ARRAY")) {
+                    error(arrId, "'" + arrName + "' is not an array.");
+                }
+                String idxType = getExpressionType(idx);
+                if (!"INT".equals(idxType)) {
+                    error(idx, "Array index must be of type 'INT', but got '" + idxType + "'");
+                }
+                String base = t.substring(t.indexOf("]")+1);
+                if (base.endsWith("VALUE")) base = base.replace("_VALUE","");
+                Node valExpr = node.getChildren().get(5);
+                String valType = getExpressionType(valExpr);
+                if (!base.equals(valType)) {
+                    error(node, "Type mismatch: cannot assign '" + valType + "' to array of '" + base + "'");
+                }
+                break;
+            case "RETURN":
+                // return in original grammar
+                Node expr = node.getChildren().get(1);
+                if (!insideFunction) {
+                    error(first, "'xinpum' (return) statement is only allowed inside a function.");
+                }
+                String rt = getExpressionType(expr);
+                if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType)) {
+                    error(node, "Return type mismatch: expected '"+currentFunctionReturnType+"', got '"+rt+"'");
+                }
+                break;
+            default:
+                traverseChildren(node);
+        }
+    }
+    private void traverseChildren(Node node) {
+        for (Node c: node.getChildren()) traverse(c);
+    }
+
+    /**
+     * Adapts to original grammar UNIT nodes: distinguishes decl, func or main
+     */
+    private void handleUnit(Node unitNode) {
+        Node tipusNode = unitNode.getChildren().get(0);
+        Node tail = unitNode.getChildren().get(1);
+        Node first = tail.getChildren().get(0);
+
+        // main: <TIPUS> MAIN OPEN_CLAUDATOR <BODY> CLOSE_CLAUDATOR
+        if (first.getToken() != null && "MAIN".equals(first.getToken().getType())) {
+            processOriginalMain(unitNode, tipusNode, tail);
+        }
+        // decl or func: <TIPUS> ID <DECL_OR_FUNC_TAIL>
+        else if (first.getToken() != null && "ID".equals(first.getToken().getType())) {
+            Node idNode = first;
+            Node declTail = tail.getChildren().get(1);
+            Node declFirst = declTail.getChildren().get(0);
+            if (declFirst.getToken() != null && "EQUAL_ASSIGNATION".equals(declFirst.getToken().getType())) {
+                processOriginalDeclaration(unitNode, tipusNode, idNode, declTail);
+            } else if (declFirst.getToken() != null && "OPEN_CLAUDATOR".equals(declFirst.getToken().getType())) {
+                processOriginalFunction(unitNode, tipusNode, idNode, declTail);
             }
         }
     }
 
+    /**
+     * Extracts a type string from a <TIPUS> node (handles arrays too)
+     */
+    private String getTypeFromTipus(Node tipusNode) {
+        Node first = tipusNode.getChildren().get(0);
+        if ("ARRAY".equals(first.getSymbol())) {
+            String size = tipusNode.getChildren().get(2).getToken().getLexeme();
+            Node baseNode = tipusNode.getChildren().get(3);
+            // baseNode is <TIPUS_BASE>
+            String baseType = baseNode.getChildren().get(0).getSymbol();
+            return "ARRAY[" + size + "]" + baseType;
+        } else {
+            // single base type
+            Node baseNode = first.getChildren().get(0);
+            return baseNode.getSymbol();
+        }
+    }
 
-    private void handleDeclaration(Node node) {
+    private void processOriginalDeclaration(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
+        if (enteredAnyFunction && !insideFunction) {
+            error(unitNode, "Global declarations are not allowed after a function or main definition.");
+        }
+        String type = getTypeFromTipus(tipusNode);
+        String name = idNode.getToken().getLexeme();
+        System.out.println("Declaring variable: " + name + " of type " + type);
+        if (symbolTable.containsKey(name)) {
+            error(idNode, "Variable '" + name + "' already declared.");
+        }
+        if (functionsDeclared.containsKey(name)) {
+            error(idNode, "Variable '" + name + "' cannot have the same name as a declared function.");
+        }
+        symbolTable.put(name, type);
+        // check assigned expression
+        Node expr = declTail.getChildren().get(1);
+        String valueType = getExpressionType(expr);
+        if (!type.equals(valueType)) {
+            error(unitNode, "Type mismatch: cannot assign '" + valueType + "' to '" + type + "'.");
+        }
+    }
+
+    private void processOriginalFunction(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
+        if (mainDeclared) {
+            error(unitNode, "No functions are allowed after the main function 'xat'.");
+        }
+        enteredAnyFunction = true;
+        String returnType = getTypeFromTipus(tipusNode);
+        String name = idNode.getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(idNode, "Function '" + name + "' cannot have the same name as a declared variable.");
+        }
+        functionsDeclared.put(name, new FunctionSignature(returnType, new ArrayList<>()));
+        currentFunctionReturnType = returnType;
+        System.out.println("Entering function '" + name + "'...");
+        insideFunction = true;
+        // declTail: [OPEN_CLAUDATOR, <DECL_OR_FUNC_TAIL_REST>]
+        Node rest = declTail.getChildren().get(1);
+        // rest: [<BODY>, CLOSE_CLAUDATOR]
+        Node bodyNode = rest.getChildren().get(0);
+        traverse(bodyNode);
+        insideFunction = false;
+        currentFunctionReturnType = null;
+        System.out.println("Exiting function '" + name + "'.");
+    }
+
+    private void processOriginalMain(Node unitNode, Node tipusNode, Node tail) {
+        if (mainDeclared) {
+            error(unitNode, "Main function 'xat' already defined.");
+        }
+        System.out.println("Processing main function 'xat'...");
+        mainDeclared = true;
+        enteredAnyFunction = true;
+        currentFunctionReturnType = getTypeFromTipus(tipusNode);
+        insideFunction = true;
+        // tail: [MAIN, OPEN_CLAUDATOR, <BODY>, CLOSE_CLAUDATOR]
+        Node bodyNode = tail.getChildren().get(2);
+        traverse(bodyNode);
+        insideFunction = false;
+        currentFunctionReturnType = null;
+        System.out.println("Finished processing 'xat'.");
+    }
+
+    // Resta de mètodes existents (handleDeclaration, handleFunction, handleMain, handleAssignment,
+    // handleReturn, handleFunctionCall, getExpressionType, isOperator, error) es mantenen igual.
+
+
+
+private void handleDeclaration(Node node) {
         if (enteredAnyFunction && !insideFunction) {
             error(node, "Global declarations are not allowed after a function or main definition.");
         }
@@ -291,8 +484,27 @@ public class SemanticAnalyzer {
                     Node divisor = node.getChildren().get(2);
                     if (divisor.getToken() != null) {
                         String val = divisor.getToken().getLexeme();
+                        String type = divisor.getToken().getType();
+
+                        // Cas 1: literal 0 o 0.0
                         if (val.equals("0") || val.equals("0.0")) {
                             error(divisor, "Division by zero.");
+                        }
+
+                        // Cas 2: variable ID
+                        if (type.equals("ID")) {
+                            String name = val;
+                            if (!symbolTable.containsKey(name)) {
+                                error(divisor, "Variable '" + name + "' not declared.");
+                            }
+
+                            String declaredType = symbolTable.get(name);
+                            if (!declaredType.equals("INT") && !declaredType.equals("FLOAT")) {
+                                error(divisor, "Division by non-numeric type '" + declaredType + "'.");
+                            }
+
+                            // 🔸 Si vols detectar que és zero literalment aquí (ex. x = 0; y = 5 / x;)
+                            // hauries de portar un map de valors assignats (no implementat aquí).
                         }
                     }
                 }
@@ -304,8 +516,10 @@ public class SemanticAnalyzer {
                 }
                 return left;
             } else {
-                return getExpressionType(node.getChildren().get(0));
-            }
+                for (Node child : node.getChildren()) {
+                    String type = getExpressionType(child);
+                    if (!type.equals("UNKNOWN")) return type;
+                }            }
         }
         return "UNKNOWN";
     }
