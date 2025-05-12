@@ -326,4 +326,5 @@ public class SemanticAnalyzer {
         }
         throw new RuntimeException("[Line " + line + "] Semantic Error: " + message);
     }
+
 }
