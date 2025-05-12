@@ -11,8 +11,9 @@ import java.util.*;
 public class SemanticAnalyzer {
     private final Node root;
     private final Map<String, String> symbolTable = new HashMap<>();
-    private SymbolTable symbolTableBona = new SymbolTable();
-    private int actualScope = 0;
+    private final SymbolTable symbolTableBona = new SymbolTable();
+    private final Deque<Integer> scopeStack = new ArrayDeque<>();
+    private int nextScopeId = 1;
 
     private static class FunctionSignature {
         String returnType;
@@ -35,6 +36,8 @@ public class SemanticAnalyzer {
     }
 
     public void analyze() {
+        // Inicialitzem l’àmbit global (0)
+        scopeStack.push(0);
         traverse(root);
         if (!mainDeclared) {
             throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
@@ -42,44 +45,76 @@ public class SemanticAnalyzer {
         symbolTableBona.printTable();
     }
 
+    private int currentScope() {
+        return scopeStack.peek();
+    }
+
+    private void enterScope() {
+        int newScope = nextScopeId++;
+        scopeStack.push(newScope);
+    }
+
+    private void exitScope() {
+        scopeStack.pop();
+    }
+
     private void traverse(Node node) {
         if (node == null) return;
 
         String sym = node.getSymbol();
         if (sym.startsWith("<") && sym.endsWith(">")) {
-            sym = sym.substring(1, sym.length()-1);
+            sym = sym.substring(1, sym.length() - 1);
         }
-        //System.out.println("Visiting node: " + sym);
 
-        boolean traverseChildren = true;
+        boolean recurse = true;
         switch (sym) {
             case "UNIT": handleUnit(node); return;
             case "DECLARACIO": handleDeclaration(node); break;
-            case "CREA_FUNCIO": handleFunction(node); traverseChildren = false; break;
-            case "CREA_MAIN": handleMain(node); traverseChildren = false; break;
+            case "CREA_FUNCIO": handleFunction(node); recurse = false; break;
+            case "CREA_MAIN": handleMain(node); recurse = false; break;
+            case "CONTENT": handleContent(node); return;
             case "ASSIGNACIO": handleAssignment(node); break;
             case "XINPUM": handleReturn(node); break;
             case "CALL_FUNCIO": handleFunctionCall(node); break;
-            case "CONTENT": handleContent(node); return;
         }
-        if (traverseChildren) {
-            for (Node c: node.getChildren()) traverse(c);
+        if (recurse) {
+            for (Node child : node.getChildren()) {
+                traverse(child);
+            }
         }
     }
 
     private void handleContent(Node node) {
         Node first = node.getChildren().get(0);
         Token tok = first.getToken();
+
+        // 1) Si no té token i el node és <TIPUS>, tractem-ho com a declaració local
         if (tok == null) {
-            traverseChildren(node); return;
+            String sym = first.getSymbol();
+            if (sym.startsWith("<") && sym.endsWith(">")) {
+                sym = sym.substring(1, sym.length() - 1);
+            }
+            if ("TIPUS".equals(sym)) {
+                handleDeclaration(node);
+                return;
+            }
         }
 
-        switch(tok.getType()) {
+        // 2) Si no té token però no és TIPUS, simplement descent:
+        if (tok == null) {
+            traverseChildren(node);
+            return;
+        }
+
+        // 3) Ara tractem els casos que sí tenen token
+        switch (tok.getType()) {
             case "ID": {
                 Node tail = node.getChildren().get(1);
                 Token tailTok = tail.getChildren().get(0).getToken();
                 String name = first.getToken().getLexeme();
+
                 if (tailTok != null && "EQUAL_ASSIGNATION".equals(tailTok.getType())) {
+                    // Assignació a variable existent
                     if (!symbolTable.containsKey(name)) {
                         error(first, SemanticErrorType.VARIABLE_NOT_DECLARED, name);
                     }
@@ -89,14 +124,18 @@ public class SemanticAnalyzer {
                     if (!expected.equals(actual)) {
                         error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
                     }
+
                 } else if (tailTok != null && "OPEN_PARENTESIS".equals(tailTok.getType())) {
+                    // Crida a funció
                     handleFunctionCall(node);
+
                 } else {
                     traverseChildren(node);
                 }
                 break;
             }
             case "POS": {
+                // Assignació a array per índex
                 Node idx = node.getChildren().get(1);
                 Node arrId = node.getChildren().get(3);
                 String arrName = arrId.getToken().getLexeme();
@@ -111,7 +150,7 @@ public class SemanticAnalyzer {
                 if (!"INT".equals(idxType)) {
                     error(idx, SemanticErrorType.ARRAY_INDEX_TYPE, idxType);
                 }
-                String base = t.substring(t.indexOf("]")+1);
+                String base = t.substring(t.indexOf("]") + 1);
                 if (base.endsWith("VALUE")) base = base.replace("_VALUE","");
                 Node valExpr = node.getChildren().get(5);
                 String valType = getExpressionType(valExpr);
@@ -121,6 +160,7 @@ public class SemanticAnalyzer {
                 break;
             }
             case "RETURN": {
+                // RETURN (xinpum)
                 Node expr = node.getChildren().get(1);
                 if (!insideFunction) {
                     error(first, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
@@ -131,9 +171,11 @@ public class SemanticAnalyzer {
                 }
                 break;
             }
-            default: traverseChildren(node);
+            default:
+                traverseChildren(node);
         }
     }
+
 
     private void traverseChildren(Node node) {
         for (Node c: node.getChildren()) traverse(c);
@@ -184,7 +226,7 @@ public class SemanticAnalyzer {
             error(idNode, SemanticErrorType.VARIABLE_NAME_CONFLICT, name);
         }
         symbolTable.put(name, type);
-        symbolTableBona.addSymbol(name, type, actualScope, idNode.getToken().getLine(), idNode.getToken().getColumn());
+        symbolTableBona.addSymbol(name, type, currentScope(), idNode.getToken().getLine(), idNode.getToken().getColumn());
 
         Node expr = declTail.getChildren().get(1);
         String valueType = getExpressionType(expr);
@@ -204,12 +246,19 @@ public class SemanticAnalyzer {
             error(idNode, SemanticErrorType.FUNCTION_NAME_CONFLICT, name);
         }
         functionsDeclared.put(name, new FunctionSignature(returnType, new ArrayList<>()));
-        symbolTableBona.addSymbol(name, returnType, actualScope, idNode.getToken().getLine(), idNode.getToken().getColumn());
+
         currentFunctionReturnType = returnType;
         insideFunction = true;
+        // Entrar a nou àmbit
+        enterScope();
+        symbolTableBona.addSymbol(name, returnType, currentScope(), idNode.getToken().getLine(), idNode.getToken().getColumn());
+
         Node rest = declTail.getChildren().get(1);
         Node bodyNode = rest.getChildren().get(0);
         traverse(bodyNode);
+        // Sortir de l’àmbit
+        exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
@@ -222,8 +271,36 @@ public class SemanticAnalyzer {
         enteredAnyFunction = true;
         currentFunctionReturnType = getTypeFromTipus(tipusNode);
         insideFunction = true;
+
+        enterScope();
         Node bodyNode = tail.getChildren().get(2);
         traverse(bodyNode);
+        exitScope();
+
+        insideFunction = false;
+        currentFunctionReturnType = null;
+    }
+
+    private void handleFunction(Node node) {
+        if (mainDeclared) {
+            error(node, SemanticErrorType.FUNCTION_AFTER_MAIN);
+        }
+        enteredAnyFunction = true;
+        String returnType = node.getChildren().get(0).getSymbol();
+        String name = node.getChildren().get(1).getToken().getLexeme();
+        if (symbolTable.containsKey(name)) {
+            error(node, SemanticErrorType.FUNCTION_NAME_CONFLICT, name);
+        }
+        functionsDeclared.put(name, new FunctionSignature(returnType, new ArrayList<>()));
+
+        currentFunctionReturnType = returnType;
+        insideFunction = true;
+        enterScope();
+        symbolTableBona.addSymbol(name, returnType, currentScope(), node.getChildren().get(1).getToken().getLine(), node.getChildren().get(1).getToken().getColumn());
+
+        for (Node child : node.getChildren()) traverse(child);
+        exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
@@ -232,8 +309,9 @@ public class SemanticAnalyzer {
         if (enteredAnyFunction && !insideFunction) {
             error(node, SemanticErrorType.FUNCTION_AFTER_MAIN);
         }
+        // Determinar tipus
         String type;
-        if (node.getChildren().get(0).getSymbol().equals("ARRAY")) {
+        if ("ARRAY".equals(node.getChildren().get(0).getSymbol())) {
             String size = node.getChildren().get(2).getToken().getLexeme();
             String baseType = node.getChildren().get(3).getSymbol();
             type = "ARRAY[" + size + "]" + baseType;
@@ -241,33 +319,26 @@ public class SemanticAnalyzer {
             type = node.getChildren().get(0).getSymbol();
         }
         String name = node.getChildren().get(1).getToken().getLexeme();
+
         if (symbolTable.containsKey(name)) {
             error(node, SemanticErrorType.VARIABLE_ALREADY_DECLARED, name);
         }
         if (functionsDeclared.containsKey(name)) {
             error(node, SemanticErrorType.VARIABLE_NAME_CONFLICT, name);
         }
-        symbolTable.put(name, type);
-        symbolTableBona.addSymbol(name, type, actualScope, node.getToken().getLine(), node.getToken().getColumn());
-    }
 
-    private void handleFunction(Node node) {
-        if (mainDeclared) {
-            error(node, SemanticErrorType.FUNCTION_AFTER_MAIN);
-        }
-        enteredAnyFunction = true;
-        String name = node.getChildren().get(1).getToken().getLexeme();
-        if (symbolTable.containsKey(name)) {
-            error(node, SemanticErrorType.FUNCTION_NAME_CONFLICT, name);
-        }
-        String returnType = node.getChildren().get(0).getSymbol();
-        List<String> paramTypes = new ArrayList<>();
-        functionsDeclared.put(name, new FunctionSignature(returnType, paramTypes));
-        currentFunctionReturnType = returnType;
-        insideFunction = true;
-        for (Node child : node.getChildren()) traverse(child);
-        insideFunction = false;
-        currentFunctionReturnType = null;
+        // Afegir al taula de símbols interna
+        symbolTable.put(name, type);
+
+        // Afegir al SymbolTable "bona" amb la línia/columna de l'ID
+        Token idTok = node.getChildren().get(1).getToken();
+        symbolTableBona.addSymbol(
+                name,
+                type,
+                currentScope(),
+                idTok.getLine(),
+                idTok.getColumn()
+        );
     }
 
     private void handleMain(Node node) {
@@ -276,12 +347,23 @@ public class SemanticAnalyzer {
         }
         mainDeclared = true;
         enteredAnyFunction = true;
+        // Agafem el tipus de retorn del MAIN
         currentFunctionReturnType = node.getChildren().get(0).getSymbol();
         insideFunction = true;
-        for (Node child : node.getChildren()) traverse(child);
+
+        // Entrar a un nou àmbit per al MAIN
+        enterScope();
+        // Recórrer tot el cos del main
+        for (Node child : node.getChildren()) {
+            traverse(child);
+        }
+        // Sortir de l’àmbit del MAIN
+        exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
+
 
     private void handleAssignment(Node node) {
         Node assignPrim = node.getChildren().get(0);

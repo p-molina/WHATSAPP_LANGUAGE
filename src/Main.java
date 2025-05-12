@@ -18,7 +18,7 @@ public class Main {
             builder.buildParsingTable();
 
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-            lexer.tokenize("testing/test2.wsp");
+            lexer.tokenize("testing/test1.wsp");
 
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
             Node root = parser.parse(lexer);
