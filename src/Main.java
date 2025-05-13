@@ -1,10 +1,9 @@
+import MIPS.MIPSGenerator;
+import TAC.TACGenerator;
 import Testing.TestExecute;
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
-import entities.Dictionary;
-import entities.Grammar;
-import entities.Node;
-import entities.ParserTableBuilder;
+import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
 
 import java.util.List;
@@ -21,7 +20,7 @@ public class Main {
             ParserAnalyzer  parser  = new ParserAnalyzer(grammar, builder);
 
             boolean runTests = false;
-            // Cambiar esto al final para que sea por un parametro de entrada
+            // Cambiar esto en un futuro para que el fichero sea un parametro de entrada
             String  fileToParse = "resources/code.wsp";
             for (String arg : args) {
                 if ("-test".equals(arg)) {
@@ -46,7 +45,18 @@ public class Main {
                 lexer.tokenize(fileToParse);
                 Node root = parser.parse(lexer);
                 printTree(root, "", true);
-                new SemanticAnalyzer(root).analyze();
+
+                SymbolTable symbolTable = new SymbolTable();
+                SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root, symbolTable);
+                semanticAnalyzer.analyze();
+
+                TACGenerator tacGen = new TACGenerator(root);
+                List<String> tac = tacGen.generate(root);
+                //tac = tacGen.generate(root);  //Generar fitxer tac_test1.txt
+                tac.forEach(System.out::println);
+
+                MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test1.txt",
+                        "outputFiles/mips/mips_test1.asm");
             }
 
         } catch (Exception e) {
