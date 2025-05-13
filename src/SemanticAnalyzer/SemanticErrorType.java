@@ -1,4 +1,4 @@
-package entities;
+package SemanticAnalyzer;
 
 public enum SemanticErrorType {
     VARIABLE_NOT_DECLARED("Variable '%s' not declared."),

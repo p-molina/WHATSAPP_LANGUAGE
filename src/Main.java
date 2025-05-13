@@ -1,7 +1,7 @@
+import MIPS.MIPSGenerator;
 import ParserAnalyzer.ParserAnalyzer;
+import TAC.TACGenerator;
 import SemanticAnalyzer.SemanticAnalyzer;
-import SemanticAnalyzer.TACGenerator;
-import SemanticAnalyzer.SemanticAnalyzerDEBUG;
 import entities.Dictionary;
 import entities.Grammar;
 import entities.Node;
@@ -29,12 +29,13 @@ public class Main {
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
             semanticAnalyzer.analyze();
 
-            SemanticAnalyzerDEBUG semanticAnalyzerD = new SemanticAnalyzerDEBUG(root);
-            semanticAnalyzerD.analyze();
-
             TACGenerator tacGen = new TACGenerator(root);
             List<String> tac = tacGen.generate(root);
+            //tac = tacGen.generate(root);  //Generar fitxer tac_file.txt
             tac.forEach(System.out::println);
+
+            MIPSGenerator mipsGen = new MIPSGenerator("tacFiles/tac_file.txt", "mipsFiles/mips_file.asm");
+            mipsGen.generate();
 
         } catch (RuntimeException e) {
             System.err.println("ERROR: " + e.getMessage());

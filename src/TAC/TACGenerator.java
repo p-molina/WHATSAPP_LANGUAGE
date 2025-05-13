@@ -1,4 +1,4 @@
-package SemanticAnalyzer;
+package TAC;
 
 import entities.Node;
 import entities.Token;
