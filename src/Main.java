@@ -1,5 +1,6 @@
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
+import SemanticAnalyzer.TACGenerator;
 import entities.Dictionary;
 import entities.Grammar;
 import entities.Node;
@@ -27,6 +28,9 @@ public class Main {
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
             semanticAnalyzer.analyze();
 
+            TACGenerator tacGen = new TACGenerator(root);
+            List<String> tac = tacGen.generate(root);
+            tac.forEach(System.out::println);
 
         } catch (Exception e) {
             System.err.println("Error durante el parseo:");
