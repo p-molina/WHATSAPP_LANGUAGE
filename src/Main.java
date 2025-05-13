@@ -31,10 +31,11 @@ public class Main {
 
             TACGenerator tacGen = new TACGenerator(root);
             List<String> tac = tacGen.generate(root);
-            //tac = tacGen.generate(root);  //Generar fitxer tac_file.txt
+            //tac = tacGen.generate(root);  //Generar fitxer tac_test1.txt
             tac.forEach(System.out::println);
 
-            MIPSGenerator mipsGen = new MIPSGenerator("tacFiles/tac_file.txt", "mipsFiles/mips_file.asm");
+            MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test1.txt",
+                                                    "outputFiles/mips/mips_test1.asm");
             mipsGen.generate();
 
         } catch (RuntimeException e) {
