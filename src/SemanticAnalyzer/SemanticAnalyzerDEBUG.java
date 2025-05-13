@@ -158,9 +158,9 @@ public class SemanticAnalyzerDEBUG {
         symbolTableBona.addSymbol(name, type, currentScope(),
                 idNode.getToken().getLine(), idNode.getToken().getColumn());
         String valueType = getExpressionType(declTail.getChildren().get(1));
-        if (!type.equals(valueType)) {
+        if (!type.equals(valueType))
             error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
-        }
+
     }
 
     private void handleFunctionUnit(Node tipusNode, Node idNode, Node declTail) {
