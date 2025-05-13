@@ -41,9 +41,8 @@ public class LexicalAnalyzer {
      * Tokenizes the input file.
      *
      * @param filePath The path to the file to be tokenized.
-     * @throws IOException If an I/O error occurs.
      */
-    public void tokenize(String filePath) throws IOException {
+    public void tokenize(String filePath) {
         int line = 1;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -80,8 +79,11 @@ public class LexicalAnalyzer {
 
                 line++;
             }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading file: " + filePath, e);
         }
     }
+
 
     /**
      * Returns the next token from the list of tokens.

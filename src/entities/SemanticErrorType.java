@@ -18,7 +18,9 @@ public enum SemanticErrorType {
     RETURN_OUTSIDE_FUNCTION("'xinpum' (return) is only valid inside functions."),
     SYMBOL_REDECLARED_IN_SCOPE("Symbol '%s' already declared in scope %d."),
     UNKNOWN_SYMBOL("Variable or function '%s' not declared."),
-    EXPRESSION_TYPE_MISMATCH("Expression types mismatch: '%s' and '%s'.");
+    EXPRESSION_TYPE_MISMATCH("Expression types mismatch: '%s' and '%s'."),
+    FUNCTION_REDECLARED("Function '%s' already declared."),
+    VARIABLE_REDECLARED("Variable '%s' already declared.");
 
     private final String message;
 

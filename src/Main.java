@@ -1,6 +1,6 @@
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
-import SemanticAnalyzer.TACGenerator;
+import SemanticAnalyzer.SemanticAnalyzerDEBUG;
 import entities.Dictionary;
 import entities.Grammar;
 import entities.Node;
@@ -19,7 +19,7 @@ public class Main {
             builder.buildParsingTable();
 
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-            lexer.tokenize("testing/test1.wsp");
+            lexer.tokenize("testing/test2.wsp");
 
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
             Node root = parser.parse(lexer);
@@ -28,13 +28,12 @@ public class Main {
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
             semanticAnalyzer.analyze();
 
-            TACGenerator tacGen = new TACGenerator(root);
-            List<String> tac = tacGen.generate(root);
-            tac.forEach(System.out::println);
+            SemanticAnalyzerDEBUG semanticAnalyzerD = new SemanticAnalyzerDEBUG(root);
+            semanticAnalyzerD.analyze();
 
-        } catch (Exception e) {
-            System.err.println("Error durante el parseo:");
-            e.printStackTrace();
+        } catch (RuntimeException e) {
+            System.err.println("ERROR: " + e.getMessage());
+            System.exit(1);
         }
     }
 
