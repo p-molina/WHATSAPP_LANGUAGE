@@ -32,9 +32,6 @@ public class ParserTableBuilder {
 
         initParsingTable();
         fillParsingTable();
-
-        // Opcional: imprimir tabla para debug
-        printingTable();
     }
 
     /**
@@ -92,8 +89,6 @@ public class ParserTableBuilder {
             }
         } while (changed);
 
-        System.out.println("\n<< FIRST >>\n");
-        first.forEach((nt, fset) -> System.out.println("FIRST(" + nt + ") = " + fset));
         return first;
     }
 
@@ -146,8 +141,6 @@ public class ParserTableBuilder {
             }
         } while (changed);
 
-        System.out.println("\n<< FOLLOW >>\n");
-        follow.forEach((nt, f) -> System.out.printf("FOLLOW(%s) = %s%n", nt, f));
         return follow;
     }
 
