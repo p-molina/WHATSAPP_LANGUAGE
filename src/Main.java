@@ -1,5 +1,6 @@
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
+import SemanticAnalyzer.SemanticAnalyzerDEBUG;
 import entities.Dictionary;
 import entities.Grammar;
 import entities.Node;
@@ -26,6 +27,9 @@ public class Main {
 
             SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
             semanticAnalyzer.analyze();
+
+            SemanticAnalyzerDEBUG semanticAnalyzerD = new SemanticAnalyzerDEBUG(root);
+            semanticAnalyzerD.analyze();
 
 
         } catch (Exception e) {
