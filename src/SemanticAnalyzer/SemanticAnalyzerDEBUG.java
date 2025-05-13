@@ -11,45 +11,33 @@ import java.util.*;
 
 public class SemanticAnalyzerDEBUG {
     private final Node root;
-    private final SymbolTable symbolTableBona = new SymbolTable();
+    private final SymbolTable symbolTable = new SymbolTable();
     private final Deque<Integer> scopeStack = new ArrayDeque<>();
     private int nextScopeId = 1;
     private boolean insideFunction = false;
     private boolean mainDeclared = false;
     private String currentFunctionReturnType = null;
 
-    public SemanticAnalyzerDEBUG(Node root) {
-        this.root = root;
-    }
+    public SemanticAnalyzerDEBUG(Node root) { this.root = root; }
 
     public void analyze() {
         scopeStack.push(0);
         traverse(root);
-        if (!mainDeclared) {
-            throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
-        }
+        if (!mainDeclared) throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
         System.out.println("\nDEBUG:");
-        symbolTableBona.printTable();
+        symbolTable.printTable();
     }
 
     private int currentScope() { return scopeStack.peek(); }
     private void enterScope() { scopeStack.push(nextScopeId++); }
     private void exitScope() { scopeStack.pop(); }
 
-    private Symbol getSymbol(String name) {
-        return symbolTableBona.getSymbol(name, currentScope());
-    }
-
-    private boolean existsInCurrentScope(String name) {
-        return symbolTableBona.getScopeSymbols(currentScope()).containsKey(name);
-    }
+    private Symbol getSymbol(String name) { return symbolTable.getSymbol(name, currentScope()); }
 
     private void traverse(Node node) {
         if (node == null) return;
         String sym = node.getSymbol();
-        if (sym.startsWith("<") && sym.endsWith(">")) {
-            sym = sym.substring(1, sym.length() - 1);
-        }
+        if (sym.startsWith("<") && sym.endsWith(">")) sym = sym.substring(1, sym.length() - 1);
 
         switch (sym) {
             case "UNIT" -> handleUnit(node);
@@ -131,9 +119,7 @@ public class SemanticAnalyzerDEBUG {
             error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
     }
 
-    private void traverseChildren(Node node) {
-        node.getChildren().forEach(this::traverse);
-    }
+    private void traverseChildren(Node node) { node.getChildren().forEach(this::traverse); }
 
     private void handleUnit(Node unitNode) {
         Node tipusNode = unitNode.getChildren().get(0);
@@ -146,58 +132,76 @@ public class SemanticAnalyzerDEBUG {
             Node declTail = tail.getChildren().get(1);
             Node declFirst = declTail.getChildren().get(0);
             if ("EQUAL_ASSIGNATION".equals(declFirst.getToken().getType()))
-                handleDeclarationUnit(unitNode, tipusNode, first, declTail);
-            else
-                handleFunctionUnit(tipusNode, first, declTail);
+                                            handleDeclarationUnit(unitNode, tipusNode, first, declTail);
+            else handleFunctionUnit(tipusNode, first, declTail);
         }
     }
 
     private void handleDeclarationUnit(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
-        String type = getTypeFromTipus(tipusNode);
         String name = idNode.getToken().getLexeme();
-        symbolTableBona.addSymbol(name, type, currentScope(),
-                idNode.getToken().getLine(), idNode.getToken().getColumn());
+        String type = getTypeFromTipus(tipusNode);
         String valueType = getExpressionType(declTail.getChildren().get(1));
-        if (!type.equals(valueType))
-            error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
 
+        symbolTable.addSymbol(name, type, currentScope(),
+                                    idNode.getToken().getLine(), idNode.getToken().getColumn());
+
+        if (!type.equals(valueType)) error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
     }
 
     private void handleFunctionUnit(Node tipusNode, Node idNode, Node declTail) {
-        String returnType = getTypeFromTipus(tipusNode);
         String name = idNode.getToken().getLexeme();
+        String returnType = getTypeFromTipus(tipusNode);
+
         currentFunctionReturnType = returnType;
         insideFunction = true;
+
         enterScope();
-        symbolTableBona.addSymbol(name, returnType, currentScope(),
-                idNode.getToken().getLine(), idNode.getToken().getColumn());
+
+        symbolTable.addSymbol(name, returnType, currentScope(),
+                                    idNode.getToken().getLine(), idNode.getToken().getColumn());
+
         traverse(declTail.getChildren().get(1).getChildren().get(0));
+
         exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
 
     private void handleMainUnit(Node tipusNode, Node tail) {
+        String name = tail.getChildren().get(0).getToken().getLexeme();
         currentFunctionReturnType = getTypeFromTipus(tipusNode);
         insideFunction = true;
         mainDeclared = true;
+
         enterScope();
+
+        symbolTable.addSymbol(name, currentFunctionReturnType, currentScope(),
+                tail.getChildren().get(0).getToken().getLine(), tail.getChildren().get(0).getToken().getColumn());
+
         traverse(tail.getChildren().get(2));
+
         exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
 
     private void handleFunction(Node node) {
-        String returnType = node.getChildren().get(0).getSymbol();
         String name = node.getChildren().get(1).getToken().getLexeme();
+        String returnType = node.getChildren().get(0).getSymbol();
         currentFunctionReturnType = returnType;
         insideFunction = true;
+
         enterScope();
-        symbolTableBona.addSymbol(name, returnType, currentScope(),
+
+        symbolTable.addSymbol(name, returnType, currentScope(),
                 node.getChildren().get(1).getToken().getLine(), node.getChildren().get(1).getToken().getColumn());
+
         node.getChildren().forEach(this::traverse);
+
         exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
@@ -206,24 +210,30 @@ public class SemanticAnalyzerDEBUG {
         currentFunctionReturnType = node.getChildren().get(0).getSymbol();
         insideFunction = true;
         mainDeclared = true;
+
         enterScope();
+
         node.getChildren().forEach(this::traverse);
+
         exitScope();
+
         insideFunction = false;
         currentFunctionReturnType = null;
     }
 
     private void handleDeclaration(Node node) {
-        String type = node.getChildren().get(0).getSymbol();
         String name = node.getChildren().get(1).getToken().getLexeme();
+        String type = node.getChildren().get(0).getSymbol();
         Token idTok = node.getChildren().get(1).getToken();
-        symbolTableBona.addSymbol(name, type, currentScope(), idTok.getLine(), idTok.getColumn());
+
+        symbolTable.addSymbol(name, type, currentScope(), idTok.getLine(), idTok.getColumn());
     }
 
     private void handleAssignment(Node node) {
         String name = node.getChildren().get(0).getChildren().get(0).getToken().getLexeme();
         Symbol sym = getSymbol(name);
         if (sym == null) error(node, SemanticErrorType.VARIABLE_NOT_DECLARED, name);
+
         String expected = sym.getType();
         String actual = getExpressionType(node.getChildren().get(1));
         if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
