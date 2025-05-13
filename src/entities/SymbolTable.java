@@ -1,5 +1,7 @@
 package entities;
 
+import SemanticAnalyzer.SemanticErrorType;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

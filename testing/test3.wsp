@@ -1,0 +1,41 @@
+// ---------- DECLARACIONES ----------
+num a -> 10 xd
+num b -> 3 xd
+decimal d -> 2.5 xd
+lletra c -> 'x' xd
+
+// ---------- ASIGNACIONES Y ARITMÉTICAS ----------
+num suma xd
+    a -> a + b xd
+    b -> b * 2 xd
+    xinpum a xd
+xd
+
+// ---------- OPERACIONES CON PARÉNTESIS ----------
+decimal operacio xd
+    d -> ¿ a + b ? / 2 xd
+    xinpum d xd
+xd
+
+// ---------- COMPARACIONES ----------
+num comparacio xd
+    num res -> 0 xd
+    bro ¿ a < b ? jajaj
+        res -> a xd
+    jejej
+    sino jajaj
+        res -> b xd
+    jejej
+    xinpum res xd
+xd
+
+// ---------- ARRAYS ----------
+textaco de 4 num valors jajaj 7 i 8 i 9 i 10 jejej xd
+
+// ---------- LLAMADAS A FUNCIONES ----------
+num main xd
+    a -> suma xd
+    d -> operacio xd
+    b -> comparacio xd
+    xinpum a xd
+xd
