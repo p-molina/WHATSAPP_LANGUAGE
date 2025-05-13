@@ -1,5 +1,6 @@
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
+import SemanticAnalyzer.TACGenerator;
 import SemanticAnalyzer.SemanticAnalyzerDEBUG;
 import entities.Dictionary;
 import entities.Grammar;
@@ -30,6 +31,10 @@ public class Main {
 
             SemanticAnalyzerDEBUG semanticAnalyzerD = new SemanticAnalyzerDEBUG(root);
             semanticAnalyzerD.analyze();
+
+            TACGenerator tacGen = new TACGenerator(root);
+            List<String> tac = tacGen.generate(root);
+            tac.forEach(System.out::println);
 
         } catch (RuntimeException e) {
             System.err.println("ERROR: " + e.getMessage());
