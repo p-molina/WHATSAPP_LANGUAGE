@@ -13,6 +13,7 @@ public class Main {
         try {
             Dictionary dict    = new Dictionary("resources/diccionari.json");
             Grammar    grammar = new Grammar("resources/grammar.json");
+
             ParserTableBuilder builder = new ParserTableBuilder(dict, grammar);
             builder.buildParsingTable();
 
@@ -52,11 +53,12 @@ public class Main {
 
                 TACGenerator tacGen = new TACGenerator(root);
                 List<String> tac = tacGen.generate(root);
-                //tac = tacGen.generate(root);  //Generar fitxer tac_test1.txt
+                //tac = tacGen.generate(root);  //Generar fitxer tac_test3.txt
                 tac.forEach(System.out::println);
 
-                MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test1.txt",
-                        "outputFiles/mips/mips_test1.asm");
+                MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test3.txt",
+                        "outputFiles/mips/mips_test3.asm");
+                mipsGen.generate();
             }
 
         } catch (Exception e) {
