@@ -27,8 +27,6 @@ public class Grammar {
 
             for (Object key : jsonObject.keySet()) {
                 String nonTerminal = (String) key;
-                System.out.println("Cargando no terminal: " + nonTerminal);
-
 
                 // Obtenemos el array de producciones (que a su vez es un array de arrays)
                 JSONArray productionsArray = (JSONArray) jsonObject.get(nonTerminal);
