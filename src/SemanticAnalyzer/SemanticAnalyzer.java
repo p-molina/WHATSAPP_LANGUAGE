@@ -10,14 +10,18 @@ import java.util.*;
 
 public class SemanticAnalyzer {
     private final Node root;
-    private final SymbolTable symbolTable = new SymbolTable();
+    private final SymbolTable symbolTable;
     private final Deque<Integer> scopeStack = new ArrayDeque<>();
     private int nextScopeId = 1;
     private boolean insideFunction = false;
     private boolean mainDeclared = false;
     private String currentFunctionReturnType = null;
 
-    public SemanticAnalyzer(Node root) { this.root = root; }
+    public SemanticAnalyzer(Node root, SymbolTable symbolTable) {
+        this.root = root;
+        this.symbolTable = symbolTable;
+    }
+
 
     public void analyze() {
         scopeStack.push(0);

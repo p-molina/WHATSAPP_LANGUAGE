@@ -2,11 +2,9 @@ import MIPS.MIPSGenerator;
 import ParserAnalyzer.ParserAnalyzer;
 import TAC.TACGenerator;
 import SemanticAnalyzer.SemanticAnalyzer;
-import entities.Dictionary;
-import entities.Grammar;
-import entities.Node;
-import entities.ParserTableBuilder;
+import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
+import entities.Dictionary;
 
 import java.util.*;
 
@@ -26,7 +24,9 @@ public class Main {
             Node root = parser.parse(lexer);
             printTree(root, "", true);
 
-            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root);
+            SymbolTable symbolTable = new SymbolTable();
+
+            SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root, symbolTable);
             semanticAnalyzer.analyze();
 
             TACGenerator tacGen = new TACGenerator(root);
