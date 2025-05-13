@@ -19,7 +19,7 @@ public class Main {
             builder.buildParsingTable();
 
             LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-            lexer.tokenize("testing/test1.wsp");
+            lexer.tokenize("testing/test2.wsp");
 
             ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
             Node root = parser.parse(lexer);
@@ -31,10 +31,9 @@ public class Main {
             SemanticAnalyzerDEBUG semanticAnalyzerD = new SemanticAnalyzerDEBUG(root);
             semanticAnalyzerD.analyze();
 
-
-        } catch (Exception e) {
-            System.err.println("Error durante el parseo:");
-            e.printStackTrace();
+        } catch (RuntimeException e) {
+            System.err.println("ERROR: " + e.getMessage());
+            System.exit(1);
         }
     }
 

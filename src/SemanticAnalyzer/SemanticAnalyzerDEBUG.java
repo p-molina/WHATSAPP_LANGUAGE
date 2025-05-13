@@ -142,6 +142,8 @@ public class SemanticAnalyzerDEBUG {
         String type = getTypeFromTipus(tipusNode);
         String valueType = getExpressionType(declTail.getChildren().get(1));
 
+        if (getSymbol(name) != null) error(unitNode, SemanticErrorType.VARIABLE_REDECLARED, name);
+
         symbolTable.addSymbol(name, type, currentScope(),
                                     idNode.getToken().getLine(), idNode.getToken().getColumn());
 
@@ -156,6 +158,8 @@ public class SemanticAnalyzerDEBUG {
         insideFunction = true;
 
         enterScope();
+
+        if (getSymbol(name) != null) error(idNode, SemanticErrorType.FUNCTION_REDECLARED, name);
 
         symbolTable.addSymbol(name, returnType, currentScope(),
                                     idNode.getToken().getLine(), idNode.getToken().getColumn());
@@ -175,6 +179,8 @@ public class SemanticAnalyzerDEBUG {
         mainDeclared = true;
 
         enterScope();
+
+        if (getSymbol(name) != null) error(tail, SemanticErrorType.FUNCTION_REDECLARED, name);
 
         symbolTable.addSymbol(name, currentFunctionReturnType, currentScope(),
                 tail.getChildren().get(0).getToken().getLine(), tail.getChildren().get(0).getToken().getColumn());
@@ -207,11 +213,16 @@ public class SemanticAnalyzerDEBUG {
     }
 
     private void handleMain(Node node) {
+        String name = node.getChildren().get(1).getToken().getLexeme();
+        String returnType = node.getChildren().get(0).getSymbol();
         currentFunctionReturnType = node.getChildren().get(0).getSymbol();
         insideFunction = true;
         mainDeclared = true;
 
         enterScope();
+
+        symbolTable.addSymbol(name, returnType, currentScope(),
+                node.getChildren().get(1).getToken().getLine(), node.getChildren().get(1).getToken().getColumn());
 
         node.getChildren().forEach(this::traverse);
 
