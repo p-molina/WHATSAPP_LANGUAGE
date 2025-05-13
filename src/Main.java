@@ -34,9 +34,9 @@ public class Main {
             //tac = tacGen.generate(root);  //Generar fitxer tac_test1.txt
             tac.forEach(System.out::println);
 
-            MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test1.txt",
+            /*MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test1.txt",
                                                     "outputFiles/mips/mips_test1.asm");
-            mipsGen.generate();
+            mipsGen.generate();*/
 
         } catch (RuntimeException e) {
             System.err.println("ERROR: " + e.getMessage());
