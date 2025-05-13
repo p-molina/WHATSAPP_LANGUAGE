@@ -89,7 +89,7 @@ public class TestExecute {
                 System.out.println("  [OK] MIPS generado en " + mipsPath + "\n");
 
             } catch (Exception e) {
-                System.err.println("  [FAIL] Error en Test " + t.getId() + ": " + e.getMessage() + "\n");
+                System.out.println("  [FAIL] Error en Test " + t.getId() + ": " + e.getMessage() + "\n");
             }
         }
     }
