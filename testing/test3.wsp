@@ -1,33 +1,19 @@
-num a -> 10 xd
-num b -> 3 xd
-decimal d -> 2.5 xd
-lletra c -> 'x' xd
+num a -> 2 xd
+decimal b -> 3.14 xd
 
-num suma xd
-    a -> a + b xd
-    b -> b * 2 xd
-    xinpum a xd
-xd
+num suma jajaj
+    num d -> 6 xd
+    xinpum a + d xd
+jejej
 
-decimal operacio xd
-    d -> ¿ a + b ? / 2 xd
-    xinpum d xd
-xd
-
-num comparacio xd
-    num res -> 0 xd
-    bro ¿ a < b ? jajaj
-        res -> a xd
+num mitjana jajaj
+    tombarella ¿ a < 10 ? jajaj
+        a -> a + 1 xd
     jejej
-    sino jajaj
-        res -> b xd
-    jejej
-    xinpum res xd
-xd
-
-num main xd
-    a -> suma xd
-    d -> operacio xd
-    b -> comparacio xd
     xinpum a xd
-xd
+jejej
+
+num xat jajaj
+    num aa -> 5 xd
+    xinpum 0 xd
+jejej

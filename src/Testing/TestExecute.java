@@ -74,7 +74,7 @@ public class TestExecute {
                 System.out.println("  [OK] Análisis semántico completado");
 
                 // Generar TAC y escribir a archivo
-                TACGenerator tacGen = new TACGenerator(root);
+                TACGenerator tacGen = new TACGenerator();
                 List<String> tac = tacGen.generate(root);
                 String tacPath = "outputFiles/tac/tac_test" + t.getId() + ".txt";
                 Files.createDirectories(Paths.get("outputFiles/tac"));
