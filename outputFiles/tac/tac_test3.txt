@@ -6,14 +6,20 @@ t1 = a + d
 return t1
 mitjana:
 L0:
-t0 = 10
 if_false t0 goto L1
-t1 = 1
-t2 = a + t1
-a = t2
+t0 = 1
+t1 = a + t0
+a = t1
 goto L0
 L1:
 return a
-t3 = 5
-t4 = 0
-return t4
+t2 = 5
+if t2 goto L2
+goto L3
+L2:
+t3 = 1
+t4 = a + t3
+a = t4
+L3:
+t5 = 0
+return t5

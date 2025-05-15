@@ -21,7 +21,7 @@ public class TACGeneratorNEW {
 
         try (FileWriter writer = new FileWriter(filename)) {
             for (String line : code) {
-                System.out.println(line);
+                //System.out.println(line);
                 writer.write(line + System.lineSeparator());
             }
             System.out.println("TAC escrit a: " + filename);
@@ -34,10 +34,15 @@ public class TACGeneratorNEW {
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 2) {
             Node first = node.getChildren().get(0);
             Node second = node.getChildren().get(1);
-            if (first.getToken() != null && "ID".equals(first.getToken().getType()) &&
-                                            "<ID_CONTENT>".equals(second.getSymbol())) {
+            if (first.getToken() != null && "ID".equals(first.getToken().getType())
+                    && "<ID_CONTENT>".equals(second.getSymbol())) {
                 currentId = first.getToken().getLexeme();
             }
+        }
+
+        if (node.getSymbol().equals("<CONDICIO>")) {
+            handleCondition(node);
+            return;
         }
 
         switch (getNodeKind(node)) {
@@ -47,23 +52,14 @@ public class TACGeneratorNEW {
             case RETURN -> handleReturn(node);
             case ASSIGNATION -> handleAssignation(node);
             case OPERATION -> handleOperation(node);
-            case OTHER -> {
-                for (Node child : node.getChildren()) {
-                    start(child);
-                }
-                Token tok = node.getToken();
-                if (tok != null) {
-                    switch (tok.getType()) {
-                        case "INT_VALUE", "FLOAT_VALUE", "CHAR_VALUE" -> {
-                            String tmp = newTemp();
-                            code.add(tmp + " = " + tok.getLexeme());
-                            stack.push(tmp);
-                        }
-                        case "ID" -> stack.push(tok.getLexeme());
-                    }
-                }
-            }
+            case COMPARATION -> handleComparacio(node);
+            case OTHER -> { handleOthers(node); }
         }
+    }
+
+    private void handleCondition(Node node) {
+        Node comparacio = node.getChildren().get(0); // <COMPARACIO>
+        start(comparacio);
     }
 
     private void handleFunction(Node node) {
@@ -72,12 +68,12 @@ public class TACGeneratorNEW {
         String funcName = idNode.getToken().getLexeme();
         code.add(funcName + ":");
 
-        tempCounter = 0; // reiniciem temporals
+        tempCounter = 0;
 
         Node declOrFuncTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
         Node declOrFuncTailRest = declOrFuncTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL_REST>
         Node body = declOrFuncTailRest.getChildren().get(0); // <BODY>
-        start(body); // recórrer cos
+        start(body);
     }
 
     private void handleWhile(Node node) {
@@ -141,7 +137,7 @@ public class TACGeneratorNEW {
     }
 
     private void handleOperation(Node node) {
-        if (node.getChildren().size() == 0) return;
+        if (node.getChildren().isEmpty()) return;
 
         start(node.getChildren().get(0));
 
@@ -162,6 +158,51 @@ public class TACGeneratorNEW {
                 } else {
                     break;
                 }
+            }
+        }
+    }
+
+    private void handleComparacio(Node node) {
+        // node ::= <ELEMENT> <COMPARACIO'>
+        if (node.getChildren().size() == 2) {
+            Node left = node.getChildren().get(0);
+            Node compTail = node.getChildren().get(1);
+
+            if (compTail.getChildren().size() == 2) {
+                Token opToken = compTail.getChildren().get(0).getToken();
+                Node right = compTail.getChildren().get(1);
+
+                if (opToken != null) {
+                    start(left);  // genera i apila left
+                    start(right); // genera i apila right
+
+                    String rightVal = getLastTemp();
+                    String leftVal = getLastTemp();
+                    String tmp = newTemp();
+                    String op = map(opToken.getType());
+
+                    code.add(tmp + " = " + leftVal + " " + op + " " + rightVal);
+                    stack.push(tmp);
+                }
+            } else {
+                start(left);
+            }
+        }
+    }
+
+    private void handleOthers(Node node) {
+        for (Node child : node.getChildren()) {
+            start(child);
+        }
+        Token tok = node.getToken();
+        if (tok != null) {
+            switch (tok.getType()) {
+                case "INT_VALUE", "FLOAT_VALUE", "CHAR_VALUE" -> {
+                    String tmp = newTemp();
+                    code.add(tmp + " = " + tok.getLexeme());
+                    stack.push(tmp);
+                }
+                case "ID" -> stack.push(tok.getLexeme());
             }
         }
     }
@@ -206,6 +247,10 @@ public class TACGeneratorNEW {
             return NodeKind.OPERATION;
         }
 
+        if (node.getSymbol().equals("<COMPARACIO>")) {
+            return NodeKind.COMPARATION;
+        }
+
         return NodeKind.OTHER;
     }
 
@@ -227,6 +272,12 @@ public class TACGeneratorNEW {
             case "MINUS" -> "-";
             case "MULTIPLY" -> "*";
             case "DIVISION" -> "/";
+            case "LOWER" -> "<";
+            case "BIGGER" -> ">";
+            case "EQUAL_COMPARATION" -> "==";
+            case "DIFFERENT" -> "!=";
+            case "LOWER_EQUAL" -> "<=";
+            case "BIGGER_EQUAL" -> ">=";
             default -> "?";
         };
     }
@@ -238,6 +289,7 @@ public class TACGeneratorNEW {
         RETURN,
         ASSIGNATION,
         OPERATION,
+        COMPARATION,
         OTHER
     }
 }

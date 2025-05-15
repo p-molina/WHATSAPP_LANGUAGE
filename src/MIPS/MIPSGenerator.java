@@ -31,8 +31,8 @@ public class MIPSGenerator {
             while ((line = br.readLine()) != null) {
                 String mipsInstruction = convertTacToMips(line);
                 writer.write(mipsInstruction + "\n");
-                System.out.println("TAC->   " + line);
-                System.out.println("MIPS->  " + mipsInstruction);
+                //System.out.println("TAC->   " + line);
+                //System.out.println("MIPS->  " + mipsInstruction);
             }
 
         } catch (Exception e) {

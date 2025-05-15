@@ -22,11 +22,8 @@ public class Node {
     }
 
     public String getSymbol() { return symbol; }
-    public Token getToken() { return token; }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
+    public Token getToken() { return token; }
 
     public void setToken(Token token) {
         this.token = token;
@@ -36,12 +33,12 @@ public class Node {
     }
 
     public List<Node> getChildren() { return children; }
+
     public void addChild(Node child) {
         child.setParent(this);
         children.add(child);
     }
 
-    public Node getParent() { return parent; }
     public void setParent(Node parent) { this.parent = parent; }
 
     @Override
