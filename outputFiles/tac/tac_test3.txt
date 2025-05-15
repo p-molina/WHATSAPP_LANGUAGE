@@ -4,7 +4,7 @@ t1 = 3.14
 varsLocals:
 t2 = 69
 t3 = 'j'
-t4 = 0
+t4 = 1
 return t4
 
 operacions:
@@ -21,28 +21,35 @@ t10 = t2 * t2
 t11 = t10 / t2
 t12 = t9 - t11
 t13 = t12
-t15 = t0 + t14
-return t15
+return t0
 
-mitjana:
+bucle:
 L0:
-t16 = 10
-t17 = t0 < t16
-if t17 goto L1
-t18 = 1
-t19 = t0 + t18
-t0 = t19
+t14 = 10.5
+t15 = t1 < t14
+if t15 goto L1
+t16 = t1 + t4
+t1 = t16
 goto L0
 L1:
+return t1
+
+condicional:
+t17 = 5
+t18 = t0 == t17
+if t18 goto L2
+t19 = t0 - t4
+t0 = t19
+goto L3
+L2:
+t20 = t0 + t17
+t0 = t20
+L3:
 return t0
 
 xat:
-t20 = 5
-t21 = t0 < t20
-if t21 goto L2
-goto L3
-L2:
-t22 = t0 + t18
-t0 = t22
-L3:
-return t4
+t22 = t21
+t24 = t23
+t26 = t25
+t27 = 0
+return t27

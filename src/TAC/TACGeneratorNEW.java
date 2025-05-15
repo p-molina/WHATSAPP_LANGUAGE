@@ -287,7 +287,6 @@ public class TACGeneratorNEW {
                     if (!varToTemp.containsKey(lex)) {
                         tmp = newTemp();
                         varToTemp.put(lex, tmp);
-                        System.out.println("lex: " + lex + " -> " + tmp);
                     } else {
                         tmp = varToTemp.get(lex);
                     }

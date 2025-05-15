@@ -1,0 +1,25 @@
+num n -> 10 xd
+
+num fibonacci jajaj
+    num resultat xd
+
+    bro ¿ n < 2 ? jajaj
+        resultat -> n xd
+    jejej
+    sino jajaj
+        n -> n - 1 xd
+        num res1 -> fibonacci xd
+
+        n -> n - 1 xd
+        num res2 -> fibonacci xd
+
+        resultat -> res1 + res2 xd
+    jejej
+
+    xinpum resultat xd
+jejej
+
+num xat jajaj
+    num resposta -> fibonacci xd
+    xinpum resposta xd
+jejej

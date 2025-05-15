@@ -11,9 +11,9 @@ import LexicalAnalyzer.LexicalAnalyzer;
 import java.util.List;
 
 public class Main {
-    static String wspFilePath = "testing/test3.wsp";
-    static String tacFilePath = "outputFiles/tac/tac_test3.txt";
-    static String mipsFilePath = "outputFiles/mips/mips_test3.asm";
+    static String wspFilePath = "testing/fibonacci.wsp";
+    static String tacFilePath = "outputFiles/tac/tac_fibonacci.txt";
+    static String mipsFilePath = "outputFiles/mips/mips_fibonacci.asm";
     static String dicionaryFilePath = "resources/diccionari.json";
     static String grammarFilePath = "resources/grammar.json";
 

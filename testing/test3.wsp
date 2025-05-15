@@ -5,7 +5,7 @@ num varsLocals jajaj
     num jan -> 69 xd
     decimal jan1 -> 3.14 xd
     lletra jan2 -> 'j' xd
-    xinpum 0 xd
+    xinpum 1 xd
 jejej
 
 num operacions jajaj
@@ -18,7 +18,7 @@ num operacions jajaj
 
     num complexe -> janitus + janitus - janitus * janitus / janitus xd
 
-    xinpum a + d xd
+    xinpum a xd
 jejej
 
 decimal bucle jajaj
@@ -30,17 +30,16 @@ decimal bucle jajaj
     xinpum b xd
 jejej
 
-lletra condicional jajaj
-    lletra ILYKAY -> 'T' xd
+num condicional jajaj
 
-    bro ¿ a <= 69 ? jajaj
-        ILYKAY -> 'T' xd
+    bro ¿ a = 5 ? jajaj
+        a -> a + 5 xd
     jejej
     sino jajaj
-        ILYKAY -> 'F' xd
+        a -> a - 1 xd
     jejej
 
-    xinpum ILYKAY xd
+    xinpum a xd
 jejej
 
 num xat jajaj
