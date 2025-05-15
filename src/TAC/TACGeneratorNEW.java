@@ -62,32 +62,68 @@ public class TACGeneratorNEW {
     }
 
 
-    private NodeKind getNodeKind(Node n) {
-        List<Node> children = n.getChildren();
+    private NodeKind getNodeKind(Node node) {
+        List<Node> children = node.getChildren();
         if (children.isEmpty()) return NodeKind.OTHER;
 
-        Token firstTok = children.get(0).getToken();
-        if (firstTok == null) return NodeKind.OTHER;
-
-        String type = firstTok.getType();
-
-        // Funció: <TIPUS> ID JAJAJ <BODY> JEJEJ
-        if (type.matches("NUM|FLOAT|CHAR") &&
-                children.size() > 2 &&
-                children.get(1).getToken() != null &&
-                children.get(2).getToken() != null &&
-                "JAJAJ".equals(children.get(2).getToken().getType())) {
-            return NodeKind.FUNCTION;
+        // FUNCIONS
+        if (node.getSymbol().equals("<UNIT>")) {
+            if (children.size() >= 2) {
+                Node unitTail = children.get(1);
+                if (unitTail.getSymbol().equals("<UNIT_TAIL>")
+                        && unitTail.getChildren().size() >= 2) {
+                    Node idNode = unitTail.getChildren().get(0);
+                    Node tailNode = unitTail.getChildren().get(1);
+                    if (tailNode.getSymbol().equals("<DECL_OR_FUNC_TAIL>")
+                            && tailNode.getChildren().size() >= 2
+                            && tailNode.getChildren().get(0).getToken() != null
+                            && "OPEN_CLAUDATOR".equals(tailNode.getChildren().get(0).getToken().getType())) {
+                        return NodeKind.FUNCTION;
+                    }
+                }
+            }
         }
 
-        if ("BUCLE".equals(type)) return NodeKind.WHILE;
-        if ("IF".equals(type) || "BRO".equals(type)) return NodeKind.IF;
-        if ("RETURN".equals(type) || "XINPUM".equals(type)) return NodeKind.RETURN;
-        if ("EQUAL_ASSIGNATION".equals(type)) return NodeKind.ASSIGNATION;
-        if (Set.of("SUM", "MINUS", "MULTIPLY", "DIVISION").contains(type)) return NodeKind.OPERATION;
+        // IF
+        if (node.getSymbol().equals("<CONTENT>")
+                && !node.getChildren().isEmpty()
+                && node.getChildren().get(0).getToken() != null
+                && "IF".equals(node.getChildren().get(0).getToken().getType())) {
+            return NodeKind.IF;
+        }
+
+        // WHILE
+        if (node.getSymbol().equals("<CONTENT>")
+                && !node.getChildren().isEmpty()
+                && node.getChildren().get(0).getToken() != null
+                && "BUCLE".equals(node.getChildren().get(0).getToken().getType())) {
+            return NodeKind.WHILE;
+        }
+
+        // RETURN
+        if (node.getSymbol().equals("<CONTENT>")
+                && !node.getChildren().isEmpty()
+                && node.getChildren().get(0).getToken() != null
+                && "RETURN".equals(node.getChildren().get(0).getToken().getType())) {
+            return NodeKind.RETURN;
+        }
+
+        // ASSIGNACIÓ (ID -> EXP)
+        if (node.getSymbol().equals("<ID_CONTENT>")
+                && !node.getChildren().isEmpty()
+                && node.getChildren().get(0).getToken() != null
+                && "EQUAL_ASSIGNATION".equals(node.getChildren().get(0).getToken().getType())) {
+            return NodeKind.ASSIGNATION;
+        }
+
+        // OPERACIÓ
+        if (Set.of("<EXPRESSIO>", "<TERME>").contains(node.getSymbol())) {
+            return NodeKind.OPERATION;
+        }
 
         return NodeKind.OTHER;
     }
+
 
 
     private enum NodeKind {
