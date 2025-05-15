@@ -149,7 +149,6 @@ public class TACGeneratorNEW {
                             .getToken().getLexeme();
 
         if (functions.contains(funcName)) {
-
             String tmp;
             if (varToTemp.containsKey(currentId)) {
                 tmp = varToTemp.get(currentId);
@@ -178,9 +177,6 @@ public class TACGeneratorNEW {
         code.add(tmp + " = " + val);
         stack.push(tmp);
     }
-
-
-
 
     private void handleOperation(Node node) {
         if (node.getChildren().isEmpty()) return;
@@ -245,13 +241,33 @@ public class TACGeneratorNEW {
                 "EQUAL_ASSIGNATION".equals(suffix.getChildren().get(0).getToken().getType())) {
 
             Node expressio = suffix.getChildren().get(1);
-            start(expressio);
 
+            String funcName =   expressio
+                    .getChildren().get(0)
+                    .getChildren().get(0)
+                    .getChildren().get(0)
+                    .getToken().getLexeme();
+
+            if (functions.contains(funcName)) {
+                String tmp;
+                if (varToTemp.containsKey(currentId)) {
+                    tmp = varToTemp.get(currentId);
+                } else {
+                    tmp = newTemp();
+                    varToTemp.put(currentId, tmp);
+                }
+
+                code.add(tmp + " = call " + funcName);
+                stack.push(tmp);
+                return;
+            }
+
+            start(expressio);
             String val = getLastTemp();
 
             // Si el valor és un literal conegut, reutilitzem la temp
             if (literalToTemp.containsValue(val) && !varToTemp.containsKey(id)) {
-                varToTemp.put(id, val); // Assigna la mateixa temp
+                varToTemp.put(id, val);
             } else {
                 String tmp = newTemp();
                 varToTemp.put(id, tmp);
