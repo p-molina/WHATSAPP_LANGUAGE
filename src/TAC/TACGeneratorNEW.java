@@ -17,11 +17,14 @@ public class TACGeneratorNEW {
     public TACGeneratorNEW() {}
 
     public void generateFile(Node root, String filename) {
+        labelCounter = 0;
+        tempCounter = 0;
+
         start(root);
 
         try (FileWriter writer = new FileWriter(filename)) {
             for (String line : code) {
-                //System.out.println(line);
+                System.out.println(line);
                 writer.write(line + System.lineSeparator());
             }
             System.out.println("TAC escrit a: " + filename);
@@ -34,15 +37,9 @@ public class TACGeneratorNEW {
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 2) {
             Node first = node.getChildren().get(0);
             Node second = node.getChildren().get(1);
-            if (first.getToken() != null && "ID".equals(first.getToken().getType())
-                    && "<ID_CONTENT>".equals(second.getSymbol())) {
+            if (first.getToken() != null && "ID".equals(first.getToken().getType()) && "<ID_CONTENT>".equals(second.getSymbol())) {
                 currentId = first.getToken().getLexeme();
             }
-        }
-
-        if (node.getSymbol().equals("<CONDICIO>")) {
-            handleCondition(node);
-            return;
         }
 
         switch (getNodeKind(node)) {
@@ -53,13 +50,15 @@ public class TACGeneratorNEW {
             case ASSIGNATION -> handleAssignation(node);
             case OPERATION -> handleOperation(node);
             case COMPARATION -> handleComparacio(node);
-            case OTHER -> { handleOthers(node); }
+            case OTHER -> handleOthers(node);
         }
     }
 
-    private void handleCondition(Node node) {
-        Node comparacio = node.getChildren().get(0); // <COMPARACIO>
-        start(comparacio);
+    private String handleCondition(Node node) {
+        // node ::= <COMPARACIO> <CONDICIO'>
+        start(node.getChildren().get(0)); // <COMPARACIO>
+        // per ara ignores <CONDICIO'> (AND / OR), però pots capturar la comparació
+        return getLastTemp();
     }
 
     private void handleFunction(Node node) {
@@ -68,7 +67,7 @@ public class TACGeneratorNEW {
         String funcName = idNode.getToken().getLexeme();
         code.add(funcName + ":");
 
-        tempCounter = 0;
+        //tempCounter = 0;
 
         Node declOrFuncTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
         Node declOrFuncTailRest = declOrFuncTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL_REST>
@@ -83,8 +82,7 @@ public class TACGeneratorNEW {
         code.add(Lstart + ":");
 
         Node condNode = node.getChildren().get(2); // <CONDICIO>
-        start(condNode);
-        String condTmp = getLastTemp();
+        String condTmp = handleCondition(condNode);
 
         code.add("if_false " + condTmp + " goto " + Lend);
 
@@ -100,8 +98,7 @@ public class TACGeneratorNEW {
         String Lend = newLabel();
 
         Node condNode = node.getChildren().get(2); // <CONDICIO>
-        start(condNode);
-        String condTmp = getLastTemp();
+        String condTmp = handleCondition(condNode);
 
         code.add("if " + condTmp + " goto " + Lthen);
 
@@ -163,7 +160,6 @@ public class TACGeneratorNEW {
     }
 
     private void handleComparacio(Node node) {
-        // node ::= <ELEMENT> <COMPARACIO'>
         if (node.getChildren().size() == 2) {
             Node left = node.getChildren().get(0);
             Node compTail = node.getChildren().get(1);
@@ -173,8 +169,8 @@ public class TACGeneratorNEW {
                 Node right = compTail.getChildren().get(1);
 
                 if (opToken != null) {
-                    start(left);  // genera i apila left
-                    start(right); // genera i apila right
+                    start(left);
+                    start(right);
 
                     String rightVal = getLastTemp();
                     String leftVal = getLastTemp();

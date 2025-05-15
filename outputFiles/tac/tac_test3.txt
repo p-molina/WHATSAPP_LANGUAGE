@@ -1,25 +1,25 @@
 t0 = 2
 t1 = 3.14
 suma:
-t0 = 6
-t1 = a + d
-return t1
+t2 = 6
+t3 = a + d
+return t3
 mitjana:
 L0:
-if_false t0 goto L1
-t0 = 1
-t1 = a + t0
-a = t1
+if_false t2 goto L1
+t4 = 1
+t5 = a + t4
+a = t5
 goto L0
 L1:
 return a
-t2 = 5
-if t2 goto L2
+t6 = 5
+if t6 goto L2
 goto L3
 L2:
-t3 = 1
-t4 = a + t3
-a = t4
+t7 = 1
+t8 = a + t7
+a = t8
 L3:
-t5 = 0
-return t5
+t9 = 0
+return t9
