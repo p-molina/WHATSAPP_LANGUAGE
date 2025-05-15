@@ -12,6 +12,7 @@ public class TACGeneratorNEW {
     private final Deque<String> stack = new ArrayDeque<>();
     private final Map<String, String> varToTemp = new HashMap<>();
     private final Map<String, String> literalToTemp = new HashMap<>();
+    private ArrayList<String> functions = new ArrayList<>();
     private int labelCounter = 0;
     private int tempCounter = 0;
     private String currentId = null;
@@ -82,6 +83,7 @@ public class TACGeneratorNEW {
         Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
         Node idNode = unitTail.getChildren().get(0); // ID
         String funcName = idNode.getToken().getLexeme();
+        functions.add(funcName);
         code.add("\n" + funcName + ":");
 
         Node declOrFuncTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
@@ -139,8 +141,30 @@ public class TACGeneratorNEW {
     }
 
     private void handleAssignation(Node node) {
-        start(node.getChildren().get(1)); // EXPRESSIO
+        Node expr = node.getChildren().get(1); // <EXPRESSIO>
+        String funcName =   expr
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getToken().getLexeme();
 
+        if (functions.contains(funcName)) {
+
+            String tmp;
+            if (varToTemp.containsKey(currentId)) {
+                tmp = varToTemp.get(currentId);
+            } else {
+                tmp = newTemp();
+                varToTemp.put(currentId, tmp);
+            }
+
+            code.add(tmp + " = call " + funcName);
+            stack.push(tmp);
+            return;
+        }
+
+        // Comportament normal per a assignacions
+        start(expr);
         String val = getLastTemp();
 
         String tmp;
@@ -154,6 +178,7 @@ public class TACGeneratorNEW {
         code.add(tmp + " = " + val);
         stack.push(tmp);
     }
+
 
 
 

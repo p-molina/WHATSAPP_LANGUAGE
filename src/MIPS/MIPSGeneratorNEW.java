@@ -26,21 +26,9 @@ public class MIPSGeneratorNEW {
              FileWriter w = new FileWriter(mipsFilePath)) {
 
             this.writer = w;
-
-            // Escriu capçalera de codi MIPS
-            writer.write(".text\n.globl main\nmain:\n");
-
             String line;
             while ((line = br.readLine()) != null) {
                 convertTacToMips(line.trim());
-            }
-
-            // Escriu constants float a la secció .data
-            if (!floatLabels.isEmpty()) {
-                writer.write("\n.data\n");
-                for (Map.Entry<String, String> entry : floatLabels.entrySet()) {
-                    writer.write(entry.getKey() + ": .float " + entry.getValue() + "\n");
-                }
             }
 
         } catch (Exception e) {
@@ -51,94 +39,40 @@ public class MIPSGeneratorNEW {
     private void convertTacToMips(String line) {
         if (line.isEmpty()) return;
 
-        if (line.endsWith(":")) {
+        if (line.endsWith(":")) {                   // FUNCTION
             handleLabel(line);
-        } else if (line.startsWith("if ")) {
+        } else if (line.startsWith("if ")) {        // CONDITIONAL
             handleConditionalJump(line);
-        } else if (line.startsWith("goto ")) {
+        } else if (line.startsWith("goto ")) {      // JUMP TO LABEL
             handleGoto(line);
-        } else if (line.startsWith("return ")) {
+        } else if (line.startsWith("return ")) {    // RETURN VALUE
             handleReturn(line);
-        } else if (line.contains("=")) {
+        } else if (line.contains("=")) {            // ASSIGNATION
             handleAssignment(line);
+        } else if (line.contains("call")) {
+            // potser aqui controlar el call de la funcio en una assignacio, no se
         }
     }
 
     private void handleLabel(String line) {
-        try {
-            writer.write(line + "\n");  // Ex: L0:
-        } catch (Exception e) {
-            System.err.println("Error in handleLabel: " + e.getMessage());
-        }
+        // TODO
     }
 
     private void handleGoto(String line) {
-        try {
-            // Ex: goto L1
-            String[] parts = line.split("\\s+");
-            if (parts.length != 2) return;
-            String label = parts[1];
-            writer.write("j " + label + "\n");
-        } catch (Exception e) {
-            System.err.println("Error in handleGoto: " + e.getMessage());
-        }
+        // TODO
     }
 
     private void handleConditionalJump(String line) {
-        try {
-            // Ex: if t1 goto L1
-            String[] parts = line.split("\\s+");
-            if (parts.length != 4) return;
-
-            String conditionVar = parts[1];
-            String label = parts[3];
-            String reg = getRegister(conditionVar);
-
-            writer.write("bne " + reg + ", $zero, " + label + "\n");
-        } catch (Exception e) {
-            System.err.println("Error in handleConditionalJump: " + e.getMessage());
-        }
+        // TODO
     }
 
     private void handleReturn(String line) {
-        try {
-            // Ex: return t5
-            String[] parts = line.split("\\s+");
-            if (parts.length != 2) return;
-
-            String returnVar = parts[1];
-            String reg = getRegister(returnVar);
-
-            writer.write("move $v0, " + reg + "\n");
-            writer.write("jr $ra\n");
-        } catch (Exception e) {
-            System.err.println("Error in handleReturn: " + e.getMessage());
-        }
+        // TODO
     }
 
 
     private void handleAssignment(String line) {
-        try {
-            String[] parts = line.split("=");
-            if (parts.length != 2) return;
-
-            String dest = parts[0].trim();
-            String value = parts[1].trim();
-            String reg = getRegister(dest);
-
-            if (isInteger(value)) {
-                writer.write("li " + reg + ", " + value + "\n");
-            } else if (isFloat(value)) {
-                String label = "flt_" + dest;
-                floatLabels.put(label, value);
-                String floatReg = "$f" + (floatRegisterCounter % 10);
-                floatRegisterCounter++;
-                writer.write("lwc1 " + floatReg + ", " + label + "\n");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error in handleAssignment: " + e.getMessage());
-        }
+        // TODO
     }
 
     private String getRegister(String var) {
@@ -156,5 +90,9 @@ public class MIPSGeneratorNEW {
 
     private boolean isFloat(String s) {
         return s.matches("-?\\d+\\.\\d+");
+    }
+
+    private boolean isChar(String s) {
+        return s.matches("-?\\d+");
     }
 }
