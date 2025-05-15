@@ -10,6 +10,8 @@ import java.util.*;
 public class TACGeneratorNEW {
     private final List<String> code = new ArrayList<>();
     private final Deque<String> stack = new ArrayDeque<>();
+    private final Map<String, String> varToTemp = new HashMap<>();
+    private final Map<String, String> literalToTemp = new HashMap<>();
     private int labelCounter = 0;
     private int tempCounter = 0;
     private String currentId = null;
@@ -24,40 +26,55 @@ public class TACGeneratorNEW {
 
         try (FileWriter writer = new FileWriter(filename)) {
             for (String line : code) {
-                System.out.println(line);
                 writer.write(line + System.lineSeparator());
             }
-            System.out.println("TAC escrit a: " + filename);
         } catch (IOException e) {
             System.err.println("Error escrivint el TAC: " + e.getMessage());
         }
     }
 
     private void start(Node node) {
+        // Detectem assignacions del tipus: ID -> EXPRESSIO;
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 2) {
             Node first = node.getChildren().get(0);
             Node second = node.getChildren().get(1);
-            if (first.getToken() != null && "ID".equals(first.getToken().getType()) && "<ID_CONTENT>".equals(second.getSymbol())) {
+            if (first.getToken() != null && "ID".equals(first.getToken().getType())
+                    && "<ID_CONTENT>".equals(second.getSymbol())
+                    && !second.getChildren().isEmpty()
+                    && "EQUAL_ASSIGNATION".equals(second.getChildren().get(0).getToken().getType())) {
                 currentId = first.getToken().getLexeme();
             }
         }
 
+
         switch (getNodeKind(node)) {
+            case MAIN -> handleMain(node);
             case FUNCTION -> handleFunction(node);
             case WHILE -> handleWhile(node);
             case IF -> handleIf(node);
             case RETURN -> handleReturn(node);
             case ASSIGNATION -> handleAssignation(node);
             case OPERATION -> handleOperation(node);
-            case COMPARATION -> handleComparacio(node);
+            case COMPARATION -> handleComparation(node);
+            case DECLARATION -> handleDeclaration(node);
+            case GLOBAL_DECLARATION -> handleGlobalDeclaration(node);
             case OTHER -> handleOthers(node);
         }
+    }
+
+    private void handleMain(Node node) {
+        Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
+        Node idNode = unitTail.getChildren().get(0); // ID
+        String funcName = idNode.getToken().getLexeme();
+        code.add("\n" + funcName + ":");
+
+        Node body = unitTail.getChildren().get(2); // <DECL_OR_FUNC_TAIL>
+        start(body);
     }
 
     private String handleCondition(Node node) {
         // node ::= <COMPARACIO> <CONDICIO'>
         start(node.getChildren().get(0)); // <COMPARACIO>
-        // per ara ignores <CONDICIO'> (AND / OR), però pots capturar la comparació
         return getLastTemp();
     }
 
@@ -65,9 +82,7 @@ public class TACGeneratorNEW {
         Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
         Node idNode = unitTail.getChildren().get(0); // ID
         String funcName = idNode.getToken().getLexeme();
-        code.add(funcName + ":");
-
-        //tempCounter = 0;
+        code.add("\n" + funcName + ":");
 
         Node declOrFuncTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
         Node declOrFuncTailRest = declOrFuncTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL_REST>
@@ -84,7 +99,7 @@ public class TACGeneratorNEW {
         Node condNode = node.getChildren().get(2); // <CONDICIO>
         String condTmp = handleCondition(condNode);
 
-        code.add("if_false " + condTmp + " goto " + Lend);
+        code.add("if " + condTmp + " goto " + Lend);
 
         Node bodyNode = node.getChildren().get(5); // <BODY>
         start(bodyNode);
@@ -118,20 +133,29 @@ public class TACGeneratorNEW {
     }
 
     private void handleReturn(Node node) {
-        if (node.getChildren().size() > 1) {
-            start(node.getChildren().get(1)); // <EXPRESSIO>
-            String val = getLastTemp();
-            code.add("return " + val);
-        } else {
-            code.add("return");
-        }
+        start(node.getChildren().get(1)); // <EXPRESSIO>
+        String val = getLastTemp();
+        code.add("return " + val);
     }
 
     private void handleAssignation(Node node) {
         start(node.getChildren().get(1)); // EXPRESSIO
+
         String val = getLastTemp();
-        code.add(currentId + " = " + val);
+
+        String tmp;
+        if (varToTemp.containsKey(currentId)) {
+            tmp = varToTemp.get(currentId);
+        } else {
+            tmp = newTemp();
+            varToTemp.put(currentId, tmp);
+        }
+
+        code.add(tmp + " = " + val);
+        stack.push(tmp);
     }
+
+
 
     private void handleOperation(Node node) {
         if (node.getChildren().isEmpty()) return;
@@ -147,6 +171,7 @@ public class TACGeneratorNEW {
                 String right = getLastTemp();
                 String left = getLastTemp();
                 String tmp = newTemp();
+
                 code.add(tmp + " = " + left + " " + map(op) + " " + right);
                 stack.push(tmp);
 
@@ -159,13 +184,13 @@ public class TACGeneratorNEW {
         }
     }
 
-    private void handleComparacio(Node node) {
+    private void handleComparation(Node node) {
         if (node.getChildren().size() == 2) {
             Node left = node.getChildren().get(0);
             Node compTail = node.getChildren().get(1);
 
             if (compTail.getChildren().size() == 2) {
-                Token opToken = compTail.getChildren().get(0).getToken();
+                Token opToken = compTail.getChildren().get(0).getChildren().get(0).getToken();
                 Node right = compTail.getChildren().get(1);
 
                 if (opToken != null) {
@@ -186,19 +211,89 @@ public class TACGeneratorNEW {
         }
     }
 
+    private void handleDeclaration(Node node) {
+        String id = node.getChildren().get(1).getToken().getLexeme();
+        Node suffix = node.getChildren().get(2); // <LOCAL_DECL_SUFFIX>
+
+        // Declaració amb assignació
+        if (suffix.getChildren().size() >= 2 &&
+                "EQUAL_ASSIGNATION".equals(suffix.getChildren().get(0).getToken().getType())) {
+
+            Node expressio = suffix.getChildren().get(1);
+            start(expressio);
+
+            String val = getLastTemp();
+
+            // Si el valor és un literal conegut, reutilitzem la temp
+            if (literalToTemp.containsValue(val) && !varToTemp.containsKey(id)) {
+                varToTemp.put(id, val); // Assigna la mateixa temp
+            } else {
+                String tmp = newTemp();
+                varToTemp.put(id, tmp);
+                code.add(tmp + " = " + val);
+            }
+        }
+    }
+
+    private void handleGlobalDeclaration(Node node) {
+        Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
+        Token idToken = unitTail.getChildren().get(0).getToken();
+        String id = idToken.getLexeme();
+
+        Node declTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
+        Node exprNode = declTail.getChildren().get(1); // <EXPRESSIO>
+
+        start(exprNode);
+        String val = getLastTemp();
+
+        if (literalToTemp.containsValue(val)) {
+            varToTemp.put(id, val); // assigna directament la temp literal
+        } else {
+            String tmp = newTemp();
+            varToTemp.put(id, tmp);
+            code.add(tmp + " = " + val);
+        }
+
+    }
+
+
     private void handleOthers(Node node) {
         for (Node child : node.getChildren()) {
             start(child);
         }
+
         Token tok = node.getToken();
         if (tok != null) {
             switch (tok.getType()) {
                 case "INT_VALUE", "FLOAT_VALUE", "CHAR_VALUE" -> {
-                    String tmp = newTemp();
-                    code.add(tmp + " = " + tok.getLexeme());
+                    String value = tok.getLexeme();
+                    String tmp;
+
+                    if (literalToTemp.containsKey(value)) {
+                        tmp = literalToTemp.get(value);
+                    } else {
+                        tmp = newTemp();
+                        literalToTemp.put(value, tmp);
+                        code.add(tmp + " = " + value);
+                    }
+
                     stack.push(tmp);
                 }
-                case "ID" -> stack.push(tok.getLexeme());
+
+                case "ID" -> {
+                    String lex = tok.getLexeme();
+                    String tmp;
+
+                    if (!varToTemp.containsKey(lex)) {
+                        tmp = newTemp();
+                        varToTemp.put(lex, tmp);
+                        System.out.println("lex: " + lex + " -> " + tmp);
+                    } else {
+                        tmp = varToTemp.get(lex);
+                    }
+                    stack.push(tmp);
+                }
+
             }
         }
     }
@@ -209,26 +304,51 @@ public class TACGeneratorNEW {
 
         if (node.getSymbol().equals("<UNIT>") && children.size() >= 2) {
             Node unitTail = children.get(1);
-            if (unitTail.getSymbol().equals("<UNIT_TAIL>") && unitTail.getChildren().size() >= 2) {
-                Node tailNode = unitTail.getChildren().get(1);
-                if (tailNode.getSymbol().equals("<DECL_OR_FUNC_TAIL>")
-                        && tailNode.getChildren().size() >= 2
-                        && tailNode.getChildren().get(0).getToken() != null
-                        && "OPEN_CLAUDATOR".equals(tailNode.getChildren().get(0).getToken().getType())) {
-                    return NodeKind.FUNCTION;
+            if (unitTail.getSymbol().equals("<UNIT_TAIL>")) {
+                if (!unitTail.getChildren().isEmpty() &&
+                        unitTail.getChildren().get(0).getToken() != null &&
+                        "MAIN".equals(unitTail.getChildren().get(0).getToken().getType())) {
+                    return NodeKind.MAIN;
+                } else if (unitTail.getChildren().size() >= 2) {
+                    Node tailNode = unitTail.getChildren().get(1);
+                    if (tailNode.getSymbol().equals("<DECL_OR_FUNC_TAIL>")
+                            && tailNode.getChildren().size() >= 2
+                            && tailNode.getChildren().get(0).getToken() != null
+                            && "OPEN_CLAUDATOR".equals(tailNode.getChildren().get(0).getToken().getType())) {
+                        return NodeKind.FUNCTION;
+                    }
                 }
             }
         }
 
-        if (node.getSymbol().equals("<CONTENT>") && !node.getChildren().isEmpty()) {
-            Token first = node.getChildren().get(0).getToken();
-            if (first != null) {
-                return switch (first.getType()) {
-                    case "IF" -> NodeKind.IF;
-                    case "BUCLE" -> NodeKind.WHILE;
-                    case "RETURN" -> NodeKind.RETURN;
-                    default -> NodeKind.OTHER;
-                };
+        // Declaració global: <UNIT> ::= <TIPUS> ID -> EXPRESSIO
+        if (node.getSymbol().equals("<UNIT>") && node.getChildren().size() == 2) {
+            Node unitTail = node.getChildren().get(1);
+            if (unitTail.getSymbol().equals("<UNIT_TAIL>") &&
+                    unitTail.getChildren().size() == 2 &&
+                    unitTail.getChildren().get(0).getToken() != null &&  // ID
+                    "ID".equals(unitTail.getChildren().get(0).getToken().getType())) {
+
+                Node declTail = unitTail.getChildren().get(1);
+                if (declTail.getSymbol().equals("<DECL_OR_FUNC_TAIL>") &&
+                        declTail.getChildren().size() == 3 &&
+                        "EQUAL_ASSIGNATION".equals(declTail.getChildren().get(0).getToken().getType())) {
+                    return NodeKind.GLOBAL_DECLARATION;
+                }
+            }
+        }
+
+
+        // Declaració local: <CONTENT> ::= <TIPUS> ID <LOCAL_DECL_SUFFIX> LINE_DELIMITER
+        if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 3) {
+            Node tipus = node.getChildren().get(0);
+            Node idNode = node.getChildren().get(1);
+            Node suffix = node.getChildren().get(2);
+
+            if (idNode.getToken() != null &&
+                    "ID".equals(idNode.getToken().getType()) &&
+                    suffix.getSymbol().equals("<LOCAL_DECL_SUFFIX>")) {
+                return NodeKind.DECLARATION;
             }
         }
 
@@ -245,6 +365,18 @@ public class TACGeneratorNEW {
 
         if (node.getSymbol().equals("<COMPARACIO>")) {
             return NodeKind.COMPARATION;
+        }
+
+        if (node.getSymbol().equals("<CONTENT>") && !node.getChildren().isEmpty()) {
+            Token first = node.getChildren().get(0).getToken();
+            if (first != null) {
+                return switch (first.getType()) {
+                    case "IF" -> NodeKind.IF;
+                    case "BUCLE" -> NodeKind.WHILE;
+                    case "RETURN" -> NodeKind.RETURN;
+                    default -> NodeKind.OTHER;
+                };
+            }
         }
 
         return NodeKind.OTHER;
@@ -279,6 +411,7 @@ public class TACGeneratorNEW {
     }
 
     private enum NodeKind {
+        MAIN,
         FUNCTION,
         WHILE,
         IF,
@@ -286,6 +419,8 @@ public class TACGeneratorNEW {
         ASSIGNATION,
         OPERATION,
         COMPARATION,
+        DECLARATION,
+        GLOBAL_DECLARATION,
         OTHER
     }
 }

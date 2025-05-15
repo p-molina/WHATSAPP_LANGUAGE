@@ -28,7 +28,7 @@ public class SemanticAnalyzer {
         traverse(root);
         if (!mainDeclared) throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
 
-        symbolTable.printTable();
+        //symbolTable.printTable();
     }
 
     private int currentScope() { return scopeStack.peek(); }

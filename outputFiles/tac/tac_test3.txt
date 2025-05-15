@@ -1,25 +1,36 @@
 t0 = 2
 t1 = 3.14
+
 suma:
 t2 = 6
-t3 = a + d
-return t3
+t3 = t1 + t2
+t1 = t3
+t4 = t0 + t2
+return t4
+
+proba1:
+return t0
+
 mitjana:
 L0:
-if_false t2 goto L1
-t4 = 1
-t5 = a + t4
-a = t5
+t5 = 10
+t6 = t0 < t5
+if t6 goto L1
+t7 = 1
+t8 = t0 + t7
+t0 = t8
 goto L0
 L1:
-return a
-t6 = 5
-if t6 goto L2
+return t0
+
+xat:
+t9 = 5
+t10 = t0 < t9
+if t10 goto L2
 goto L3
 L2:
-t7 = 1
-t8 = a + t7
-a = t8
+t11 = t0 + t7
+t0 = t11
 L3:
-t9 = 0
-return t9
+t12 = 0
+return t12

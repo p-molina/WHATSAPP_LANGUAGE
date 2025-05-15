@@ -2,12 +2,14 @@ package MIPS;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 
 public class MIPSGenerator {
 
     private final String tacFilePath;
     private final String mipsFilePath;
+    private Boolean conditionValue;
 
     public MIPSGenerator(String tacFilePath, String mipsFilePath) {
         this.tacFilePath = tacFilePath;
@@ -24,7 +26,7 @@ public class MIPSGenerator {
     }
 
     public void generate() {
-        try (BufferedReader br = new BufferedReader(new java.io.FileReader(tacFilePath));
+        try (BufferedReader br = new BufferedReader(new FileReader(tacFilePath));
              FileWriter writer = new FileWriter(mipsFilePath)) {
 
             String line;
@@ -51,25 +53,21 @@ public class MIPSGenerator {
             return "j " + label;
         }
 
-        if (line.startsWith("if ")) {
+        if (line.startsWith("if_false ")) {
             String[] parts = line.split("\\s+");
-            if (parts.length == 6 && "goto".equals(parts[4])) {
-                String left = parts[1];
-                String op = parts[2];
-                String right = parts[3];
-                String label = parts[5];
+            if (parts.length == 4 && "goto".equals(parts[2])) {
 
-                String instr = switch (op) {
-                    case "==" -> "beq";
-                    case "!=" -> "bne";
-                    case "<"  -> "blt";
-                    case ">"  -> "bgt";
-                    case "<=" -> "ble";
-                    case ">=" -> "bge";
-                    default -> "# Operador condicional no suportat: " + op;
-                };
+                String left = parts[0];
+                String op = parts[1];   // true false
+                String right = parts[2]; // goto
+                String label = parts[3]; // etiqueta
 
-                return instr + " $" + left + ", $" + right + ", " + label;
+                System.out.println("left: " + left);
+                System.out.println("op: " + op);
+                System.out.println("right: " + right);
+                System.out.println("label: " + label);
+
+                return "beq" + " $" + parts[1] + ", $zero" + ", " + label;
             }
         }
 

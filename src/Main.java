@@ -1,4 +1,5 @@
 import MIPS.MIPSGenerator;
+import MIPS.MIPSGeneratorNEW;
 import TAC.TACGenerator;
 import TAC.TACGeneratorNEW;
 import Testing.TestExecute;
@@ -60,11 +61,8 @@ public class Main {
                 TACGeneratorNEW tacNEW = new TACGeneratorNEW();
                 tacNEW.generateFile(tree, tacFilePath);
 
-                //TACGenerator tac = new TACGenerator();
-                //tac.generateFile(tree, tacFilePath);
-
-                MIPSGenerator mipsGen = new MIPSGenerator(tacFilePath, mipsFilePath);
-                mipsGen.generate();
+                MIPSGeneratorNEW mipsGen = new MIPSGeneratorNEW();
+                mipsGen.generate(tacFilePath, mipsFilePath);
             }
 
         } catch (Exception e) {
