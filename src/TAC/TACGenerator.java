@@ -2,6 +2,9 @@ package TAC;
 
 import entities.Node;
 import entities.Token;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -13,18 +16,40 @@ public class TACGenerator {
     private int tempCounter = 0;
     private int labelCounter = 0;
 
-    /**
-     * Genera TAC a partir de l'arbre sintàctic donat
-     */
-    public List<String> generate(Node root) {
-        if (root == null) throw new IllegalArgumentException("AST root no pot ser null");
-        code.clear();
-        stack.clear();
+
+    public TACGenerator() {
+    }
+
+    public List<String> generate(Node node) {
         tempCounter = 0;
         labelCounter = 0;
 
+        code.clear();
+        stack.clear();
+
+        visit(node);
+
+        return code;
+    }
+
+    public void generateFile(Node root, String filename) {
+        tempCounter = 0;
+        labelCounter = 0;
+
+        code.clear();
+        stack.clear();
+
         visit(root);
-        return List.copyOf(code);
+
+        try (FileWriter writer = new FileWriter(filename)) {
+            for (String line : code) {
+                System.out.println(line);
+                writer.write(line + System.lineSeparator());
+            }
+            System.out.println("TAC escrit a: " + filename);
+        } catch (IOException e) {
+            System.err.println("Error escrivint el TAC: " + e.getMessage());
+        }
     }
 
     /**
@@ -33,6 +58,7 @@ public class TACGenerator {
     private void visit(Node n) {
         List<Node> children = n.getChildren();
         Token firstTok = children.isEmpty() ? null : children.get(0).getToken();
+
         if (firstTok != null
                 && "INT".equals(firstTok.getType())
                 && children.size() > 3
@@ -68,6 +94,8 @@ public class TACGenerator {
             handleIf(n);
             return;
         }
+
+
 
         // Recorre fills
         for (Node child : children) {
