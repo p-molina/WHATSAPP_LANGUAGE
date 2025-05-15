@@ -7,6 +7,7 @@ public class Node {
     private String symbol;
     private Token token;
     private List<Node> children;
+    private Node parent;
 
 
     public Node(String symbol) {
@@ -36,8 +37,12 @@ public class Node {
 
     public List<Node> getChildren() { return children; }
     public void addChild(Node child) {
+        child.setParent(this);
         children.add(child);
     }
+
+    public Node getParent() { return parent; }
+    public void setParent(Node parent) { this.parent = parent; }
 
     @Override
     public String toString() {

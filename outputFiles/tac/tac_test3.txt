@@ -1,0 +1,19 @@
+t0 = 2
+t1 = 3.14
+suma:
+t0 = 6
+t1 = a + d
+return t1
+mitjana:
+L0:
+t0 = 10
+if_false t0 goto L1
+t1 = 1
+t2 = a + t1
+a = t2
+goto L0
+L1:
+return a
+t3 = 5
+t4 = 0
+return t4
