@@ -87,7 +87,7 @@ public class SemanticAnalyzer {
             if (sym == null) error(first, SemanticErrorType.VARIABLE_NOT_DECLARED, name);
             String expected = sym.getType();
             String actual = getExpressionType(tail.getChildren().get(1));
-            if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
+            //if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
         } else if (tailTok != null && "OPEN_PARENTESIS".equals(tailTok.getType())) {
             handleFunctionCall(node);
         } else {
@@ -118,8 +118,8 @@ public class SemanticAnalyzer {
         if (!insideFunction) error(first, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
 
         String rt = getExpressionType(node.getChildren().get(1));
-        if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType))
-            error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
+        //if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType))
+            //error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
     }
 
     private void traverseChildren(Node node) { node.getChildren().forEach(this::traverse); }
@@ -150,7 +150,7 @@ public class SemanticAnalyzer {
         symbolTable.addSymbol(name, type, currentScope(),
                                     idNode.getToken().getLine(), idNode.getToken().getColumn());
 
-        if (!type.equals(valueType)) error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
+        //if (!type.equals(valueType)) error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
     }
 
     private void handleFunctionUnit(Node tipusNode, Node idNode, Node declTail) {
@@ -250,15 +250,15 @@ public class SemanticAnalyzer {
 
         String expected = sym.getType();
         String actual = getExpressionType(node.getChildren().get(1));
-        if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
+        //if (!expected.equals(actual)) error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, expected);
     }
 
     private void handleReturn(Node node) {
         if (!insideFunction) error(node, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
         if (node.getChildren().size() > 1) {
             String retType = getExpressionType(node.getChildren().get(1));
-            if (!retType.equals(currentFunctionReturnType))
-                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
+            //if (!retType.equals(currentFunctionReturnType))
+                //error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
         }
     }
 
