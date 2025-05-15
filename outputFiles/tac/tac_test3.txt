@@ -1,36 +1,48 @@
 t0 = 2
 t1 = 3.14
 
-suma:
-t2 = 6
-t3 = t1 + t2
-t1 = t3
-t4 = t0 + t2
+varsLocals:
+t2 = 69
+t3 = 'j'
+t4 = 0
 return t4
 
-proba1:
-return t0
+operacions:
+t5 = t0 + t2
+t0 = t5
+t6 = t0 - t2
+t0 = t6
+t7 = t0 * t2
+t0 = t7
+t8 = t0 / t2
+t0 = t8
+t9 = t2 + t2
+t10 = t2 * t2
+t11 = t10 / t2
+t12 = t9 - t11
+t13 = t12
+t15 = t0 + t14
+return t15
 
 mitjana:
 L0:
-t5 = 10
-t6 = t0 < t5
-if t6 goto L1
-t7 = 1
-t8 = t0 + t7
-t0 = t8
+t16 = 10
+t17 = t0 < t16
+if t17 goto L1
+t18 = 1
+t19 = t0 + t18
+t0 = t19
 goto L0
 L1:
 return t0
 
 xat:
-t9 = 5
-t10 = t0 < t9
-if t10 goto L2
+t20 = 5
+t21 = t0 < t20
+if t21 goto L2
 goto L3
 L2:
-t11 = t0 + t7
-t0 = t11
+t22 = t0 + t18
+t0 = t22
 L3:
-t12 = 0
-return t12
+return t4
