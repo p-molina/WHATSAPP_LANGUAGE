@@ -77,8 +77,7 @@ public class ParserAnalyzer {
                 List<String> production = row.get(look.getType());
                 if (production == null) {
                     throw new RuntimeException(
-                            String.format("Error sintáctico: no hay producción para %s con '%s'",
-                                    topSym, look.getType())
+                            String.format(String.valueOf(GramaticalErrorType.GRAMATICAL_ERROR_TYPE), look.getLine(), look.getLexeme())
                     );
                 }
 

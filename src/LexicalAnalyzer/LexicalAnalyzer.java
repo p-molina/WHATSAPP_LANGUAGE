@@ -1,5 +1,6 @@
 package LexicalAnalyzer;
 
+import ParserAnalyzer.GramaticalErrorType;
 import entities.Dictionary;
 import entities.Token;
 
@@ -71,7 +72,9 @@ public class LexicalAnalyzer {
                     }
 
                     if (!matched) {
-                        throw new RuntimeException("Unknown token at line " + line + ", column " + column + ": " + word);
+                        throw new RuntimeException(
+                                String.format(String.valueOf(GramaticalErrorType.GRAMATICAL_ERROR_TYPE), line, word)
+                        );
                     }
 
                     column += word.length() + 1;
@@ -105,5 +108,10 @@ public class LexicalAnalyzer {
      */
     public List<Token> getTokens() {
         return tokens;
+    }
+
+    public void clear() {
+        tokens.clear();
+        currentIndex = 0;
     }
 }

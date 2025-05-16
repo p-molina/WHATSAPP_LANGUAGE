@@ -16,6 +16,7 @@ import java.util.List;
 
 /**
  * Ejecuta automáticamente todos los tests .wsp de la carpeta TEST_DIR.
+ * Elimina la primera línea de comentario antes de tokenizar.
  */
 public class TestExecute {
     private static final String TEST_DIR = "resources/tests/";
@@ -31,7 +32,8 @@ public class TestExecute {
     }
 
     /**
-     * Carga todos los .wsp de TEST_DIR en la lista tests, extrayendo descripción.
+     * Carga todos los .wsp de TEST_DIR en la lista tests,
+     * extrayendo descripción y el resto del código en el campo code.
      */
     private void loadFiles() throws IOException {
         Path dir = Paths.get(TEST_DIR);
@@ -42,38 +44,59 @@ public class TestExecute {
         int id = 1;
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir, "*.wsp")) {
             for (Path p : ds) {
-                // Leer primera línea como descripción
                 List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
+
+                // Extraer descripción (línea que comienza con //)
                 String desc = "";
+                int start = 0;
                 if (!lines.isEmpty() && lines.get(0).trim().startsWith("//")) {
                     desc = lines.get(0).trim().substring(2).trim();
+                    start = 1;
                 }
-                tests.add(new Test(id++, desc, p.toString()));
+
+                // El resto del fichero es el código a testear
+                List<String> codeLines = lines.subList(start, lines.size());
+                String code = String.join("\n", codeLines);
+
+                tests.add(new Test(id++, desc, code, p));
             }
         }
     }
 
     /**
      * Ejecuta parsing, análisis semántico, genera TAC y MIPS para cada test.
+     * Para tokenizar usamos un fichero temporal construido a partir de code.
      */
     private void passTests() {
         for (Test t : tests) {
-            System.out.println("=== Test " + t.getId() +
-                    (t.getDescription().isEmpty() ? "" : ": " + t.getDescription()) +
+            lexer.clear();
+            String[] parts = t.getFilePath().toString().split("\\\\");
+
+            System.out.println("=== File:" + parts[2] +
+                    (t.getDescription().isEmpty() ? "" : " " + t.getDescription()) +
                     " ===");
             try {
-                // Resetear lexer antes de cada test
-                lexer.tokenize(t.getFilePath());
+                // Escribimos code en un fichero temporal
+                Path tmp = Files.createTempFile("test", ".wsp");
+                Files.write(tmp,
+                        t.getCode().getBytes(StandardCharsets.UTF_8));
+                tmp.toFile().deleteOnExit();
+
+                // Tokenizar y parsear
+                lexer.tokenize(tmp.toString());
                 Node root = parser.parse(lexer);
                 System.out.println("  [OK] Parsing completado");
 
+//                if (parts[2].equals("Test14.wsp")) {
+//                    printTree(root, "", true);
+//                }
+
                 // Análisis semántico
                 SymbolTable symbolTable = new SymbolTable();
-                SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root, symbolTable);
-                semanticAnalyzer.analyze();
+                new SemanticAnalyzer(root, symbolTable).analyze();
                 System.out.println("  [OK] Análisis semántico completado");
 
-                // Generar TAC y escribir a archivo
+                // Generar TAC
                 TACGenerator tacGen = new TACGenerator(root);
                 List<String> tac = tacGen.generate(root);
                 String tacPath = "outputFiles/tac/tac_test" + t.getId() + ".txt";
@@ -81,11 +104,10 @@ public class TestExecute {
                 Files.write(Paths.get(tacPath), tac, StandardCharsets.UTF_8);
                 System.out.println("  [OK] TAC generado en " + tacPath);
 
-                // Generar MIPS a partir del archivo TAC
+                // Generar MIPS
                 String mipsPath = "outputFiles/mips/mips_test" + t.getId() + ".asm";
                 Files.createDirectories(Paths.get("outputFiles/mips"));
-                MIPSGenerator mipsGen = new MIPSGenerator(tacPath, mipsPath);
-                mipsGen.generate();
+                new MIPSGenerator(tacPath, mipsPath).generate();
                 System.out.println("  [OK] MIPS generado en " + mipsPath + "\n");
 
             } catch (Exception e) {
@@ -94,26 +116,31 @@ public class TestExecute {
         }
     }
 
-    /**
-     * Ejecuta todos los tests cargados.
-     */
+    /** Lanza todos los tests cargados. */
     public void runAll() {
         passTests();
     }
 
-    /**
-     * Main auxiliar para ejecutar tests desde línea de comandos.
-     */
+    private static void printTree(Node node, String prefix, boolean isTail) {
+        System.out.println(prefix + (isTail ? "└── " : "├── ") + node);
+        List<Node> children = node.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            printTree(children.get(i),
+                    prefix + (isTail ? "    " : "│   "),
+                    i == children.size() - 1);
+        }
+    }
+
+    /** Main auxiliar para ejecutar tests desde línea de comandos. */
     public static void main(String[] args) throws Exception {
-        entities.Dictionary dict = new entities.Dictionary("resources/diccionari.json");
-        entities.Grammar grammar = new entities.Grammar("resources/grammar.json");
+        entities.Dictionary dict    = new entities.Dictionary("resources/diccionari.json");
+        entities.Grammar    grammar = new entities.Grammar("resources/grammar.json");
         entities.ParserTableBuilder builder = new entities.ParserTableBuilder(dict, grammar);
         builder.buildParsingTable();
 
-        LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
-        ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
+        LexicalAnalyzer lexer   = new LexicalAnalyzer(dict);
+        ParserAnalyzer  parser  = new ParserAnalyzer(grammar, builder);
 
-        TestExecute tests = new TestExecute(lexer, parser);
-        tests.runAll();
+        new TestExecute(lexer, parser).runAll();
     }
 }

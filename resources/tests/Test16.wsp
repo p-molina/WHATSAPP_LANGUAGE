@@ -1,8 +1,8 @@
-// NOT_AN_ARRAY
+// ARRAY_INDEX_TYPE
 num a -> 1 xd
 
 num xat jajaj
-    pos 1 de a -> 1 xd
+    pos 1.1 de a -> 1 xd
 
     xinpum 0 xd
 jejej

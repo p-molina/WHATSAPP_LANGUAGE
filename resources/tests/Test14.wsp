@@ -1,0 +1,15 @@
+// TYPE_MISMATCH_ASSIGN
+num a -> 1.1 xd
+
+decimal suma jajaj
+    decimal b -> 1.1 xd
+    decimal c -> 1.2 xd
+    decimal d -> b + c xd
+
+    xinpum a xd
+jejej
+
+num xat jajaj
+    a -> suma xd
+    xinpum 0 xd
+jejej

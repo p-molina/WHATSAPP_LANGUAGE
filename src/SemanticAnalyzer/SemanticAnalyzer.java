@@ -55,6 +55,46 @@ public class SemanticAnalyzer {
         }
     }
 
+    private void handleLocalDeclaration(Node node) {
+        // 1) extraer tipo y nombre
+        Node tipusNode = node.getChildren().get(0);
+        Node idNode    = node.getChildren().get(1);
+        String name    = idNode.getToken().getLexeme();
+        String type    = getTypeFromTipus(tipusNode);
+
+        // 2) chequear redeclaración
+        if (getSymbol(name) != null) {
+            error(node, SemanticErrorType.VARIABLE_REDECLARED, name);
+        }
+
+        // 3) añadir con el tipo correcto
+        symbolTable.addSymbol(
+                name,
+                type,
+                currentScope(),
+                idNode.getToken().getLine(),
+                idNode.getToken().getColumn()
+        );
+
+        // 4) si hay asignación (LOCAL_DECL_SUFFIX), comprobar tipos
+        if (node.getChildren().size() > 2) {
+            Node suffix = node.getChildren().get(2);  // <LOCAL_DECL_SUFFIX>
+            if (!suffix.getChildren().isEmpty()) {
+                Node firstSuffixChild = suffix.getChildren().get(0);
+                Token tok = firstSuffixChild.getToken();
+                if (tok != null && "EQUAL_ASSIGNATION".equals(tok.getType())) {
+                    // ya tenemos confirmada la asignación
+                    // ojo: el expr estará en suffix.getChildren().get(1)
+                    Node expr = suffix.getChildren().get(1);
+                    String actual = getExpressionType(expr);
+                    if (!type.equals(actual)) {
+                        error(node, SemanticErrorType.TYPE_MISMATCH_ASSIGN, actual, type);
+                    }
+                }
+            }
+        }
+    }
+
     private void handleContent(Node node) {
         Node first = node.getChildren().get(0);
         Token tok = first.getToken();
@@ -62,7 +102,7 @@ public class SemanticAnalyzer {
         if (tok == null) {
             String sym = first.getSymbol().replaceAll("[<>]", "");
             if ("TIPUS".equals(sym)) {
-                handleDeclaration(node);
+                handleLocalDeclaration(node);
                 return;
             }
             traverseChildren(node);
@@ -115,12 +155,30 @@ public class SemanticAnalyzer {
     }
 
     private void handleReturnContent(Node node, Node first) {
-        if (!insideFunction) error(first, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
+        if (!insideFunction)
+            error(first, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
 
-        String rt = getExpressionType(node.getChildren().get(1));
-        if (currentFunctionReturnType != null && !rt.equals(currentFunctionReturnType))
-            error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
+        Node expr = node.getChildren().get(1);
+
+        if (expr.getToken() != null && "ID".equals(expr.getToken().getType())) {
+            String varName = expr.getToken().getLexeme();
+            Symbol sym = getSymbol(varName);
+            if (sym == null) {
+                error(expr, SemanticErrorType.UNKNOWN_SYMBOL, varName);
+            }
+            String rt = sym.getType();
+            if (!rt.equals(currentFunctionReturnType)) {
+                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
+            }
+        }
+        else {
+            String rt = getExpressionType(expr);
+            if (!rt.equals(currentFunctionReturnType)) {
+                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, rt);
+            }
+        }
     }
+
 
     private void traverseChildren(Node node) { node.getChildren().forEach(this::traverse); }
 
@@ -141,17 +199,27 @@ public class SemanticAnalyzer {
     }
 
     private void handleDeclarationUnit(Node unitNode, Node tipusNode, Node idNode, Node declTail) {
-        String name = idNode.getToken().getLexeme();
-        String type = getTypeFromTipus(tipusNode);
+        String name      = idNode.getToken().getLexeme();
+        String type      = getTypeFromTipus(tipusNode);
         String valueType = getExpressionType(declTail.getChildren().get(1));
 
-        if (getSymbol(name) != null) error(unitNode, SemanticErrorType.VARIABLE_REDECLARED, name);
+        if (symbolTable.getScopeSymbols(currentScope()).containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_REDECLARED, name);
+        }
 
-        symbolTable.addSymbol(name, type, currentScope(),
-                                    idNode.getToken().getLine(), idNode.getToken().getColumn());
+        symbolTable.addSymbol(
+                name,
+                type,
+                currentScope(),
+                idNode.getToken().getLine(),
+                idNode.getToken().getColumn()
+        );
 
-        if (!type.equals(valueType)) error(unitNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
+        if (!type.equals(valueType)) {
+            error(idNode, SemanticErrorType.TYPE_MISMATCH_ASSIGN, valueType, type);
+        }
     }
+
 
     private void handleFunctionUnit(Node tipusNode, Node idNode, Node declTail) {
         String name = idNode.getToken().getLexeme();
@@ -205,7 +273,8 @@ public class SemanticAnalyzer {
         enterScope();
 
         symbolTable.addSymbol(name, returnType, currentScope(),
-                node.getChildren().get(1).getToken().getLine(), node.getChildren().get(1).getToken().getColumn());
+                node.getChildren().get(1).getToken().getLine(),
+                node.getChildren().get(1).getToken().getColumn());
 
         node.getChildren().forEach(this::traverse);
 
@@ -236,11 +305,17 @@ public class SemanticAnalyzer {
     }
 
     private void handleDeclaration(Node node) {
-        String name = node.getChildren().get(1).getToken().getLexeme();
-        String type = node.getChildren().get(0).getSymbol();
-        Token idTok = node.getChildren().get(1).getToken();
+        Node tipusNode = node.getChildren().get(0);
+        Node idNode = node.getChildren().get(1);
+        String name = idNode.getToken().getLexeme();
+        String type = getTypeFromTipus(tipusNode);
 
-        symbolTable.addSymbol(name, type, currentScope(), idTok.getLine(), idTok.getColumn());
+        if (symbolTable.getScopeSymbols(currentScope()).containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_REDECLARED, name);
+        }
+
+
+        symbolTable.addSymbol(name, type, currentScope(), idNode.getToken().getLine(), idNode.getToken().getColumn());
     }
 
     private void handleAssignment(Node node) {
@@ -254,11 +329,31 @@ public class SemanticAnalyzer {
     }
 
     private void handleReturn(Node node) {
-        if (!insideFunction) error(node, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
+        if (!insideFunction)
+            error(node, SemanticErrorType.RETURN_OUTSIDE_FUNCTION);
+
         if (node.getChildren().size() > 1) {
-            String retType = getExpressionType(node.getChildren().get(1));
-            if (!retType.equals(currentFunctionReturnType))
-                error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
+            Node expr = node.getChildren().get(1);
+
+            if (expr.getToken() != null && "ID".equals(expr.getToken().getType())) {
+                String varName = expr.getToken().getLexeme();
+                Symbol sym = getSymbol(varName);
+                if (sym == null) {
+                    error(expr, SemanticErrorType.UNKNOWN_SYMBOL, varName);
+                }
+                String retType = sym.getType();
+
+                if (!retType.equals(currentFunctionReturnType)) {
+                    error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
+                }
+            }
+            else {
+                // En cualquier otro caso (literal, expresión compuesta…), seguimos usando getExpressionType
+                String retType = getExpressionType(expr);
+                if (!retType.equals(currentFunctionReturnType)) {
+                    error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);
+                }
+            }
         }
     }
 
@@ -280,37 +375,52 @@ public class SemanticAnalyzer {
     }
 
     private String getExpressionType(Node node) {
+        String sym = node.getSymbol();
+        
+        if (sym.startsWith("<") && sym.endsWith(">")) {
+            sym = sym.substring(1, sym.length() - 1);
+        }
+
+        if ("TIPUS".equals(sym)) {return getTypeFromTipus(node);}
+
         if (node.getToken() != null) {
-            return switch (node.getToken().getType()) {
-                case "INT_VALUE" -> "INT";
-                case "FLOAT_VALUE" -> "FLOAT";
-                case "CHAR_VALUE" -> "CHAR";
+            switch (node.getToken().getType()) {
+                case "INT_VALUE"   ->   { return "INT"; }
+                case "FLOAT_VALUE" ->   { return "FLOAT"; }
+                case "CHAR_VALUE"  ->   { return "CHAR"; }
                 case "ID" -> {
                     String name = node.getToken().getLexeme();
                     Symbol s = getSymbol(name);
-                    if (s != null) yield s.getType();
+                    if (s != null) return s.getType();
                     error(node, SemanticErrorType.UNKNOWN_SYMBOL, name);
-                    yield "UNKNOWN";
+                    return "UNKNOWN";
                 }
-                default -> "UNKNOWN";
-            };
-        }
-        if (!node.getChildren().isEmpty()) {
-            if (node.getChildren().size() == 3 && isOperator(node.getChildren().get(1))) {
-                String left = getExpressionType(node.getChildren().get(0));
-                String right = getExpressionType(node.getChildren().get(2));
-                if (!left.equals(right))
-                    error(node, SemanticErrorType.EXPRESSION_TYPE_MISMATCH, left, right);
-                return left;
-            } else {
-                for (Node child : node.getChildren()) {
-                    String type = getExpressionType(child);
-                    if (!"UNKNOWN".equals(type)) return type;
+                case "TIPUS" -> {
+                    return node.getToken().getLexeme();
                 }
+                default -> {}
             }
         }
+
+        if (node.getChildren().size() == 3 && isOperator(node.getChildren().get(1))) {
+            String left  = getExpressionType(node.getChildren().get(0));
+            String right = getExpressionType(node.getChildren().get(2));
+            if (!left.equals(right)) {
+                error(node, SemanticErrorType.EXPRESSION_TYPE_MISMATCH, left, right);
+            }
+            return left;
+        }
+
+        for (Node child : node.getChildren()) {
+            String t = getExpressionType(child);
+            if (!"UNKNOWN".equals(t)) {
+                return t;
+            }
+        }
+
         return "UNKNOWN";
     }
+
 
     private boolean isOperator(Node node) {
         return switch (node.getSymbol()) {
