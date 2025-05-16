@@ -1,17 +1,19 @@
 num n -> 10 xd
+num resultat -> 0 xd
+num res1 -> 0 xd
+num res2 -> 0 xd
+num resposta -> 0 xd
 
 num fibonacci jajaj
-    num resultat xd
-
     bro ¿ n < 2 ? jajaj
         resultat -> n xd
     jejej
     sino jajaj
         n -> n - 1 xd
-        num res1 -> fibonacci xd
+        res1 -> fibonacci xd
 
         n -> n - 1 xd
-        num res2 -> fibonacci xd
+        res2 -> fibonacci xd
 
         resultat -> res1 + res2 xd
     jejej
@@ -20,6 +22,6 @@ num fibonacci jajaj
 jejej
 
 num xat jajaj
-    num resposta -> fibonacci xd
+    resposta -> fibonacci xd
     xinpum resposta xd
 jejej
