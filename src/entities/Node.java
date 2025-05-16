@@ -6,7 +6,8 @@ import java.util.List;
 public class Node {
     private String symbol;
     private Token token;
-    private List<Node> children;
+    private final List<Node> children;
+    private Node parent;
 
 
     public Node(String symbol) {
@@ -21,11 +22,8 @@ public class Node {
     }
 
     public String getSymbol() { return symbol; }
-    public Token getToken() { return token; }
 
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
+    public Token getToken() { return token; }
 
     public void setToken(Token token) {
         this.token = token;
@@ -35,9 +33,15 @@ public class Node {
     }
 
     public List<Node> getChildren() { return children; }
+
     public void addChild(Node child) {
+        child.setParent(this);
         children.add(child);
     }
+
+    public Node getParent() { return parent; }
+
+    public void setParent(Node parent) { this.parent = parent; }
 
     @Override
     public String toString() {

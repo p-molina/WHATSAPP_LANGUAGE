@@ -16,7 +16,6 @@ import java.util.List;
 
 /**
  * Ejecuta automáticamente todos los tests .wsp de la carpeta TEST_DIR.
- * Elimina la primera línea de comentario antes de tokenizar.
  */
 public class TestExecute {
     private static final String TEST_DIR = "resources/tests/";

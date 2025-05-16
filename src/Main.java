@@ -1,5 +1,7 @@
 import MIPS.MIPSGenerator;
+import MIPS.MIPSGeneratorNEW;
 import TAC.TACGenerator;
+import TAC.TACGeneratorNEW;
 import Testing.TestExecute;
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
@@ -9,10 +11,17 @@ import LexicalAnalyzer.LexicalAnalyzer;
 import java.util.List;
 
 public class Main {
+    static String wspFilePath = "testing/fibonacci.wsp";
+    static String tacFilePath = "outputFiles/tac/tac_fibonacci.txt";
+    static String mipsFilePath = "outputFiles/mips/mips_fibonacci.asm";
+    static String dicionaryFilePath = "resources/diccionari.json";
+    static String grammarFilePath = "resources/grammar.json";
+
+
     public static void main(String[] args) {
         try {
-            Dictionary dict    = new Dictionary("resources/diccionari.json");
-            Grammar    grammar = new Grammar("resources/grammar.json");
+            Dictionary  dict    = new Dictionary(dicionaryFilePath);
+            Grammar     grammar = new Grammar(grammarFilePath);
 
             ParserTableBuilder builder = new ParserTableBuilder(dict, grammar);
             builder.buildParsingTable();
@@ -22,12 +31,11 @@ public class Main {
 
             boolean runTests = false;
             // Cambiar esto en un futuro para que el fichero sea un parametro de entrada
-            String  fileToParse = "resources/code.wsp";
             for (String arg : args) {
                 if ("-test".equals(arg)) {
                     runTests = true;
                 } else {
-                    fileToParse = arg;
+                    wspFilePath = arg;
                 }
             }
 
@@ -35,30 +43,26 @@ public class Main {
                 TestExecute tests = new TestExecute(lexer, parser);
                 tests.runAll();
             } else {
-                if (fileToParse == null) {
+                if (wspFilePath == null) {
                     System.err.println("Uso:");
                     System.err.println("  java Main -test               # Para correr todos los tests");
                     System.err.println("  java Main <archivo.wsp>       # Para parsear un único archivo");
                     System.exit(1);
                 }
 
-                // Limpia estado del lexer antes de tokenizar
-                lexer.tokenize(fileToParse);
-                Node root = parser.parse(lexer);
-                printTree(root, "", true);
+                lexer.tokenize(wspFilePath);
+                Node tree = parser.parse(lexer);
 
                 SymbolTable symbolTable = new SymbolTable();
-                SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(root, symbolTable);
+                SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(tree, symbolTable);
                 semanticAnalyzer.analyze();
 
-                TACGenerator tacGen = new TACGenerator(root);
-                List<String> tac = tacGen.generate(root);
-                //tac = tacGen.generate(root);  //Generar fitxer tac_test3.txt
-                tac.forEach(System.out::println);
 
-                MIPSGenerator mipsGen = new MIPSGenerator("outputFiles/tac/tac_test3.txt",
-                        "outputFiles/mips/mips_test3.asm");
-                mipsGen.generate();
+                TACGeneratorNEW tacNEW = new TACGeneratorNEW();
+                tacNEW.generateFile(tree, tacFilePath);
+
+                MIPSGeneratorNEW mipsGen = new MIPSGeneratorNEW();
+                mipsGen.generate(tacFilePath, mipsFilePath);
             }
 
         } catch (Exception e) {

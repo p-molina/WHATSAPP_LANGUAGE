@@ -28,7 +28,7 @@ public class SemanticAnalyzer {
         traverse(root);
         if (!mainDeclared) throw new RuntimeException(SemanticErrorType.MISSING_MAIN.toString());
 
-        symbolTable.printTable();
+        //symbolTable.printTable();
     }
 
     private int currentScope() { return scopeStack.peek(); }
@@ -179,7 +179,6 @@ public class SemanticAnalyzer {
         }
     }
 
-
     private void traverseChildren(Node node) { node.getChildren().forEach(this::traverse); }
 
     private void handleUnit(Node unitNode) {
@@ -273,8 +272,7 @@ public class SemanticAnalyzer {
         enterScope();
 
         symbolTable.addSymbol(name, returnType, currentScope(),
-                node.getChildren().get(1).getToken().getLine(),
-                node.getChildren().get(1).getToken().getColumn());
+                node.getChildren().get(1).getToken().getLine(), node.getChildren().get(1).getToken().getColumn());
 
         node.getChildren().forEach(this::traverse);
 
@@ -376,7 +374,7 @@ public class SemanticAnalyzer {
 
     private String getExpressionType(Node node) {
         String sym = node.getSymbol();
-        
+
         if (sym.startsWith("<") && sym.endsWith(">")) {
             sym = sym.substring(1, sym.length() - 1);
         }

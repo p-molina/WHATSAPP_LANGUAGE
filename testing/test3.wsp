@@ -1,33 +1,51 @@
-num a -> 10 xd
-num b -> 3 xd
-decimal d -> 2.5 xd
-lletra c -> 'x' xd
+num a -> 2 xd
+decimal b -> 3.14 xd
 
-num suma xd
-    a -> a + b xd
-    b -> b * 2 xd
+num varsLocals jajaj
+    num jan -> 69 xd
+    decimal jan1 -> 3.14 xd
+    lletra jan2 -> 'j' xd
+    xinpum 1 xd
+jejej
+
+num operacions jajaj
+    num janitus -> 69 xd
+
+    a -> a + janitus xd
+    a -> a - janitus xd
+    a -> a * janitus xd
+    a -> a / janitus xd
+
+    num complexe -> janitus + janitus - janitus * janitus / janitus xd
+
     xinpum a xd
-xd
+jejej
 
-decimal operacio xd
-    d -> ¿ a + b ? / 2 xd
-    xinpum d xd
-xd
+decimal bucle jajaj
 
-num comparacio xd
-    num res -> 0 xd
-    bro ¿ a < b ? jajaj
-        res -> a xd
+    tombarella ¿ b < 10.5 ? jajaj
+        b -> b + 1 xd
+    jejej
+
+    xinpum b xd
+jejej
+
+num condicional jajaj
+
+    bro ¿ a = 5 ? jajaj
+        a -> a + 5 xd
     jejej
     sino jajaj
-        res -> b xd
+        a -> a - 1 xd
     jejej
-    xinpum res xd
-xd
 
-num main xd
-    a -> suma xd
-    d -> operacio xd
-    b -> comparacio xd
     xinpum a xd
-xd
+jejej
+
+num xat jajaj
+    num valor1 -> operacions xd
+    decimal valor2 -> bucle xd
+    lletra valor3 -> condicional xd
+
+    xinpum 0 xd
+jejej
