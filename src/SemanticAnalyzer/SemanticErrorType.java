@@ -3,8 +3,8 @@ package SemanticAnalyzer;
 public enum SemanticErrorType {
     VARIABLE_NOT_DECLARED("Variable '%s' not declared."),
     VARIABLE_ALREADY_DECLARED("Variable '%s' already declared."),
-    //TYPE_MISMATCH_ASSIGN("Type mismatch: cannot assign '%s' to '%s'."),
-    //RETURN_TYPE_MISMATCH("Return type mismatch: expected '%s', got '%s'."),
+    TYPE_MISMATCH_ASSIGN("Type mismatch: cannot assign '%s' to '%s'."),
+    RETURN_TYPE_MISMATCH("Return type mismatch: expected '%s', got '%s'."),
     NOT_AN_ARRAY("'%s' is not an array."),
     ARRAY_INDEX_TYPE("Array index must be of type 'INT', but got '%s'."),
     ARRAY_ASSIGN_TYPE("Type mismatch: cannot assign '%s' to array of '%s'."),
