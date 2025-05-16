@@ -3,8 +3,8 @@ package Testing;
 import LexicalAnalyzer.LexicalAnalyzer;
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
-import TAC.TACGenerator;
 import MIPS.MIPSGenerator;
+import TAC.TACGenerator;
 import entities.Node;
 import entities.SymbolTable;
 
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ejecuta automáticamente todos los tests .wsp de la carpeta TEST_DIR.
+ * Ejecuta automáticamente todos los tests .wsp de la carpeta resources/tests/.
  */
 public class TestExecute {
     private static final String TEST_DIR = "resources/tests/";
@@ -96,11 +96,10 @@ public class TestExecute {
                 System.out.println("  [OK] Análisis semántico completado");
 
                 // Generar TAC
-                TACGenerator tacGen = new TACGenerator(root);
-                List<String> tac = tacGen.generate(root);
                 String tacPath = "outputFiles/tac/tac_test" + t.getId() + ".txt";
-                Files.createDirectories(Paths.get("outputFiles/tac"));
-                Files.write(Paths.get(tacPath), tac, StandardCharsets.UTF_8);
+
+                TACGenerator tacGen = new TACGenerator();
+                tacGen.generateFile(root, tacPath);
                 System.out.println("  [OK] TAC generado en " + tacPath);
 
                 // Generar MIPS

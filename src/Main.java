@@ -1,7 +1,5 @@
-import MIPS.MIPSGenerator;
 import MIPS.MIPSGeneratorNEW;
 import TAC.TACGenerator;
-import TAC.TACGeneratorNEW;
 import Testing.TestExecute;
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
@@ -58,7 +56,7 @@ public class Main {
                 semanticAnalyzer.analyze();
 
 
-                TACGeneratorNEW tacNEW = new TACGeneratorNEW();
+                TACGenerator tacNEW = new TACGenerator();
                 tacNEW.generateFile(tree, tacFilePath);
 
                 MIPSGeneratorNEW mipsGen = new MIPSGeneratorNEW();
