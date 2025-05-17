@@ -29,25 +29,43 @@ public class MIPSGeneratorNEW {
     }
 
     public void generate(String tacFilePath, String mipsFilePath) {
-        try (BufferedReader br = new BufferedReader(new FileReader(tacFilePath));
-             FileWriter w = new FileWriter(mipsFilePath)) {
-
+        try {
             List<String> tacLines = Files.readAllLines(Paths.get(tacFilePath));
-            SmartRegisterAllocator allocator = new SmartRegisterAllocator();
-            this.assignedRegs = allocator.allocate(tacLines);
 
-            this.writer = w;
-            String line;
+            // Detectar variables globals
             boolean insideFunction = false;
-            while ((line = br.readLine()) != null) {
+            for (String line : tacLines) {
                 line = line.trim();
                 if (line.endsWith(":")) {
                     insideFunction = true;
-                } else if (!insideFunction && line.contains("=")) {
+                    break;
+                } else if (line.contains("=")) {
                     String var = line.split("=")[0].trim();
-                    globalVars.add(var);
+                    if (var.startsWith("t")) {
+                        globalVars.add(var);
+                    }
                 }
-                convertTacToMips(line);
+            }
+
+            // Filtrar línies que només contenen codi de funcions (no globals)
+            List<String> filteredTacLines = new ArrayList<>();
+            insideFunction = false;
+            for (String line : tacLines) {
+                line = line.trim();
+                if (line.endsWith(":")) insideFunction = true;
+                if (insideFunction) filteredTacLines.add(line);
+            }
+
+            SmartRegisterAllocator allocator = new SmartRegisterAllocator();
+            this.assignedRegs = allocator.allocate(filteredTacLines);
+
+            BufferedReader br = new BufferedReader(new FileReader(tacFilePath));
+            FileWriter w = new FileWriter(mipsFilePath);
+            this.writer = w;
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                convertTacToMips(line.trim());
             }
 
         } catch (Exception e) {
@@ -301,7 +319,7 @@ public class MIPSGeneratorNEW {
             return varRegisterMap.get(var);
         }
 
-        return assignedRegs.getOrDefault(var, "$zero"); // fallback per seguretat
+        return assignedRegs.getOrDefault(var, "$zero");
     }
 
 
