@@ -69,8 +69,8 @@ public class SymbolTable {
     }
 
     public void printTable() {
-        String separator = "+-----------+---------+----------+------+--------+";
-        String header    = "| Name      | Scope   | TYPE     | LINE | COLUMN |";
+        String separator = "+-----------+--------+----------+------+--------+";
+        String header    = "| Name      | Scope  | TYPE     | LINE | COLUMN |";
 
         System.out.println(separator);
         System.out.println(header);
