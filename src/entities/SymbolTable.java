@@ -69,11 +69,26 @@ public class SymbolTable {
     }
 
     public void printTable() {
-        System.out.println("=== Taula de símbols ===");
+        String separator = "+-----------+---------+----------+------+--------+";
+        String header    = "| Name      | Scope   | TYPE     | LINE | COLUMN |";
+
+        System.out.println(separator);
+        System.out.println(header);
+        System.out.println(separator);
+
         for (int scope : table.keySet()) {
             for (Symbol sym : table.get(scope).values()) {
-                System.out.println("\t" + sym);
+                System.out.printf("| %-9s | %-6d | %-9s | %-4d | %-6d |\n",
+                        sym.getName(),
+                        sym.getScope(),
+                        sym.getType(),
+                        sym.getLine(),
+                        sym.getColumn()
+                );
             }
         }
+
+        System.out.println(separator);
     }
+
 }
