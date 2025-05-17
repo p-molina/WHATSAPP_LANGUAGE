@@ -68,6 +68,7 @@ public class MIPSGeneratorNEW {
                 convertTacToMips(line.trim());
             }
 
+            writer.close();
         } catch (Exception e) {
             System.err.println("Error during MIPS generation: " + e.getMessage());
         }
@@ -116,44 +117,52 @@ public class MIPSGeneratorNEW {
 
             writer.write("  # Save context before calling " + functionName + "\n");
 
-            int regCount = 0;
+            // Total de registres a guardar:
+            // $t0–$t9 (10), $s0–$s4 (5), $ra (1), $a0 (1) → 17 registres * 4 bytes = 68
+            int totalBytes = 17 * 4;
 
-            // Guardem $t0–$t9
+            // 1. Reservar espai
+            writer.write("  addiu $sp, $sp, -" + totalBytes + "\n");
+
+            // 2. Guardar $t0–$t9
             for (int i = 0; i <= 9; i++) {
-                writer.write("  sw $t" + i + ", -" + (4 * (regCount + 1)) + "($sp)\n");
-                regCount++;
+                writer.write("  sw $t" + i + ", " + (i * 4) + "($sp)\n");
             }
 
-            // Guardem $ra
-            writer.write("  sw $ra, -" + (4 * (regCount + 1)) + "($sp)\n");
-            regCount++;
+            // 3. Guardar $s0–$s4
+            for (int i = 0; i <= 4; i++) {
+                writer.write("  sw $s" + i + ", " + ((10 + i) * 4) + "($sp)\n");
+            }
 
-            // Guardem $a0 per si l'hem utilitzat
-            writer.write("  sw $a0, -" + (4 * (regCount + 1)) + "($sp)\n");
-            regCount++;
+            // 4. Guardar $ra i $a0
+            writer.write("  sw $ra, " + (15 * 4) + "($sp)\n");
+            writer.write("  sw $a0, " + (16 * 4) + "($sp)\n");
 
-            // Reservem espai de cop
-            writer.write("  addiu $sp, $sp, -" + (4 * regCount) + "\n");
-
+            // 5. Crida
             writer.write("  # Call function\n");
             writer.write("  jal " + functionName + "\n");
 
+            // 6. Restaurar context
             writer.write("  # Restore context after call\n");
 
-            // Recuperem $a0, $ra, $t0–$t9 (en ordre invers)
-            int offset = 0;
-            writer.write("  lw $a0, " + offset + "($sp)\n"); offset += 4;
-            writer.write("  lw $ra, " + offset + "($sp)\n"); offset += 4;
-
-            for (int i = 9; i >= 0; i--) {
-                writer.write("  lw $t" + i + ", " + offset + "($sp)\n");
-                offset += 4;
+            // 7. Recuperar $t0–$t9
+            for (int i = 0; i <= 9; i++) {
+                writer.write("  lw $t" + i + ", " + (i * 4) + "($sp)\n");
             }
 
-            // Pugem $sp
-            writer.write("  addiu $sp, $sp, " + (4 * regCount) + "\n");
+            // 8. Recuperar $s0–$s4
+            for (int i = 0; i <= 4; i++) {
+                writer.write("  lw $s" + i + ", " + ((10 + i) * 4) + "($sp)\n");
+            }
 
-            // Assignem el resultat
+            // 9. Recuperar $ra i $a0
+            writer.write("  lw $ra, " + (15 * 4) + "($sp)\n");
+            writer.write("  lw $a0, " + (16 * 4) + "($sp)\n");
+
+            // 10. Alliberar espai
+            writer.write("  addiu $sp, $sp, " + totalBytes + "\n");
+
+            // 11. Assignació de retorn (si escau)
             if (resultVar != null) {
                 String destReg = getRegister(resultVar);
                 writer.write("  move " + destReg + ", $v0\n");
@@ -163,6 +172,8 @@ public class MIPSGeneratorNEW {
             System.err.println("Error writing function call: " + e.getMessage());
         }
     }
+
+
 
     private void handleReturn(String line) {
         try {
