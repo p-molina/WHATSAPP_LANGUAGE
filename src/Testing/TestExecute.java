@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ejecuta automáticamente todos los tests .wsp de la carpeta resources/tests/.
+ * Automatically executes all .wsp tests located in the resources/tests/ folder.
  */
 public class TestExecute {
     private static final String TEST_DIR = "resources/tests/";
@@ -25,19 +25,19 @@ public class TestExecute {
     private final List<Test> tests = new ArrayList<>();
 
     public TestExecute(LexicalAnalyzer lexer, ParserAnalyzer parser) throws IOException {
-        this.lexer  = lexer;
+        this.lexer = lexer;
         this.parser = parser;
-        loadFiles();
+        loadTestFiles();
     }
 
     /**
-     * Carga todos los .wsp de TEST_DIR en la lista tests,
-     * extrayendo descripción y el resto del código en el campo code.
+     * Loads all .wsp files from TEST_DIR into the tests list,
+     * extracting the description and test code.
      */
-    private void loadFiles() throws IOException {
+    private void loadTestFiles() throws IOException {
         Path dir = Paths.get(TEST_DIR);
         if (!Files.isDirectory(dir)) {
-            throw new IOException("No existe el directorio: " + TEST_DIR);
+            throw new IOException("Directory does not exist: " + TEST_DIR);
         }
 
         int id = 1;
@@ -45,80 +45,77 @@ public class TestExecute {
             for (Path p : ds) {
                 List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
 
-                // Extraer descripción (línea que comienza con //)
-                String desc = "";
-                int start = 0;
+                // Extract description (first line starting with //)
+                String description = "";
+                int startLine = 0;
                 if (!lines.isEmpty() && lines.get(0).trim().startsWith("//")) {
-                    desc = lines.get(0).trim().substring(2).trim();
-                    start = 1;
+                    description = lines.get(0).trim().substring(2).trim();
+                    startLine = 1;
                 }
 
-                // El resto del fichero es el código a testear
-                List<String> codeLines = lines.subList(start, lines.size());
+                // Remaining lines are test code
+                List<String> codeLines = lines.subList(startLine, lines.size());
                 String code = String.join("\n", codeLines);
 
-                tests.add(new Test(id++, desc, code, p));
+                tests.add(new Test(id++, description, code, p));
             }
         }
     }
 
     /**
-     * Ejecuta parsing, análisis semántico, genera TAC y MIPS para cada test.
-     * Para tokenizar usamos un fichero temporal construido a partir de code.
+     * Runs parsing, semantic analysis, TAC and MIPS generation for each test.
+     * Uses a temporary file to tokenize the in-memory test code.
      */
-    private void passTests() {
-        for (Test t : tests) {
+    private void runTests() {
+        for (Test test : tests) {
             lexer.clear();
-            String[] parts = t.getFilePath().toString().split("\\\\");
+            String[] pathParts = test.getFilePath().toString().split("\\\\");
 
-            System.out.println("=== File:" + parts[2] +
-                    (t.getDescription().isEmpty() ? "" : " " + t.getDescription()) +
+            System.out.println("=== File: " + pathParts[pathParts.length - 1] +
+                    (test.getDescription().isEmpty() ? "" : " - " + test.getDescription()) +
                     " ===");
+
             try {
-                // Escribimos code en un fichero temporal
+                // Write test code to a temporary .wsp file
                 Path tmp = Files.createTempFile("test", ".wsp");
-                Files.write(tmp,
-                        t.getCode().getBytes(StandardCharsets.UTF_8));
+                Files.write(tmp, test.getCode().getBytes(StandardCharsets.UTF_8));
                 tmp.toFile().deleteOnExit();
 
-                // Tokenizar y parsear
+                // Lexical analysis and parsing
                 lexer.tokenize(tmp.toString());
-                Node root = parser.parse(lexer);
-                System.out.println("  [OK] Parsing completado");
+                Node syntaxTree = parser.parse(lexer);
+                System.out.println("  [OK] Parsing completed");
 
-//                if (parts[2].equals("Test14.wsp")) {
-//                    printTree(root, "", true);
-//                }
-
-                // Análisis semántico
+                // Semantic analysis
                 SymbolTable symbolTable = new SymbolTable();
-                new SemanticAnalyzer(root, symbolTable).analyze();
-                System.out.println("  [OK] Análisis semántico completado");
+                new SemanticAnalyzer(syntaxTree, symbolTable).analyze();
+                System.out.println("  [OK] Semantic analysis completed");
 
-                // Generar TAC
-                String tacPath = "outputFiles/tac/tac_test" + t.getId() + ".txt";
-
+                // Generate TAC
+                String tacPath = "resources/tests/production/tac/" + test.getId() + ".tac";
+                Files.createDirectories(Paths.get("resources/tests/production/tac/"));
                 TACGenerator tacGen = new TACGenerator();
-                tacGen.generateFile(root, tacPath);
-                System.out.println("  [OK] TAC generado en " + tacPath);
+                tacGen.generateFile(syntaxTree, tacPath);
+                System.out.println("  [OK] TAC generated at " + tacPath);
 
-                // Generar MIPS
-                String mipsPath = "outputFiles/mips/mips_test" + t.getId() + ".asm";
-                Files.createDirectories(Paths.get("outputFiles/mips"));
+                // Generate MIPS
+                String mipsPath = "tests/production/mips/" + test.getId() + ".asm";
+                Files.createDirectories(Paths.get("tests/production/mips/"));
                 new MIPSGenerator().generate(tacPath, mipsPath);
-                System.out.println("  [OK] MIPS generado en " + mipsPath + "\n");
+                System.out.println("  [OK] MIPS generated at " + mipsPath + "\n");
 
             } catch (Exception e) {
-                System.out.println("  [FAIL] Error en Test " + t.getId() + ": " + e.getMessage() + "\n");
+                System.out.println("  [FAIL] Error in Test " + test.getId() + ": " + e.getMessage() + "\n");
             }
         }
     }
 
-    /** Lanza todos los tests cargados. */
+    /** Runs all loaded tests. */
     public void runAll() {
-        passTests();
+        runTests();
     }
 
+    /** Prints the syntax tree (optional, unused by default). */
     private static void printTree(Node node, String prefix, boolean isTail) {
         System.out.println(prefix + (isTail ? "└── " : "├── ") + node);
         List<Node> children = node.getChildren();
@@ -129,15 +126,15 @@ public class TestExecute {
         }
     }
 
-    /** Main auxiliar para ejecutar tests desde línea de comandos. */
+    /** Standalone launcher for tests (can be run directly). */
     public static void main(String[] args) throws Exception {
-        entities.Dictionary dict    = new entities.Dictionary("resources/diccionari.json");
-        entities.Grammar    grammar = new entities.Grammar("resources/grammar.json");
+        entities.Dictionary dict = new entities.Dictionary("resources/diccionari.json");
+        entities.Grammar grammar = new entities.Grammar("resources/grammar.json");
         entities.ParserTableBuilder builder = new entities.ParserTableBuilder(dict, grammar);
         builder.buildParsingTable();
 
-        LexicalAnalyzer lexer   = new LexicalAnalyzer(dict);
-        ParserAnalyzer  parser  = new ParserAnalyzer(grammar, builder);
+        LexicalAnalyzer lexer = new LexicalAnalyzer(dict);
+        ParserAnalyzer parser = new ParserAnalyzer(grammar, builder);
 
         new TestExecute(lexer, parser).runAll();
     }
