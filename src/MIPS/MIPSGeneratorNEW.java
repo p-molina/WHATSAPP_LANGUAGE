@@ -4,10 +4,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class MIPSGeneratorNEW {
 
@@ -18,6 +17,8 @@ public class MIPSGeneratorNEW {
     private FileWriter writer;
 
     private final Set<String> globalVars = new HashSet<>();
+
+    private Map<String, String> assignedRegs;
 
 
     public MIPSGeneratorNEW() {
@@ -30,6 +31,10 @@ public class MIPSGeneratorNEW {
     public void generate(String tacFilePath, String mipsFilePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(tacFilePath));
              FileWriter w = new FileWriter(mipsFilePath)) {
+
+            List<String> tacLines = Files.readAllLines(Paths.get(tacFilePath));
+            SmartRegisterAllocator allocator = new SmartRegisterAllocator();
+            this.assignedRegs = allocator.allocate(tacLines);
 
             this.writer = w;
             String line;
@@ -287,18 +292,18 @@ public class MIPSGeneratorNEW {
 
 
     private String getRegister(String var) {
-        if (!varRegisterMap.containsKey(var)) {
-            if (globalVars.contains(var)) {
-                String reg = "$s" + (registerCounter % 8);  // globals → $s0-$s7
+        if (globalVars.contains(var)) {
+            if (!varRegisterMap.containsKey(var)) {
+                String reg = "$s" + (registerCounter % 8);
                 varRegisterMap.put(var, reg);
-            } else {
-                String reg = "$t" + (registerCounter % 10);
-                varRegisterMap.put(var, reg);
+                registerCounter++;
             }
-            registerCounter++;
+            return varRegisterMap.get(var);
         }
-        return varRegisterMap.get(var);
+
+        return assignedRegs.getOrDefault(var, "$zero"); // fallback per seguretat
     }
+
 
     private String getFloatRegister(String var) {
         if (!floatLabels.containsKey(var)) {

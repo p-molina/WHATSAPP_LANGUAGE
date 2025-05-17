@@ -1,16 +1,17 @@
-package mips;
+package MIPS;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SmartRegisterAllocator {
     private static final int MAX_REGS = 10;
-    private final Map<String, String> assignedRegisters = new HashMap<>();
+    private final Map<String, String> assignedRegs = new HashMap<>();
 
     public Map<String, String> allocate(List<String> tacLines) {
         Map<String, List<Integer>> usageLines = new HashMap<>();
 
-        // 1. Recorrem el TAC per saber on apareix cada tX
+        // 1. Detectar on apareix cada tX
         for (int i = 0; i < tacLines.size(); i++) {
             String line = tacLines.get(i);
             Matcher matcher = Pattern.compile("t\\d+").matcher(line);
@@ -20,7 +21,6 @@ public class SmartRegisterAllocator {
             }
         }
 
-        // 2. Preparem assignació
         Map<String, String> result = new HashMap<>();
         Map<String, Integer> lastUse = new HashMap<>();
         for (Map.Entry<String, List<Integer>> entry : usageLines.entrySet()) {
@@ -31,7 +31,7 @@ public class SmartRegisterAllocator {
         Queue<String> freeRegs = new LinkedList<>();
         for (int i = 0; i < MAX_REGS; i++) freeRegs.add("$t" + i);
 
-        // 3. Recorrem el TAC per assignar registres per línia
+        // 2. Assignació dinàmica de registres
         for (int i = 0; i < tacLines.size(); i++) {
             String line = tacLines.get(i);
             Set<String> usedInLine = new HashSet<>();
@@ -42,14 +42,14 @@ public class SmartRegisterAllocator {
 
                 if (!active.containsKey(t)) {
                     if (freeRegs.isEmpty())
-                        throw new RuntimeException("Massa registres vius alhora (línea " + i + ")");
+                        throw new RuntimeException("Massa registres vius alhora (línia " + i + ")");
                     String reg = freeRegs.poll();
                     active.put(t, reg);
                     result.put(t, reg);
                 }
             }
 
-            // Alliberem registres que ja no es fan servir
+            // Alliberar registres que ja no són vius
             Iterator<Map.Entry<String, String>> it = active.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, String> entry = it.next();
