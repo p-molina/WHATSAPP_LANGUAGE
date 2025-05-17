@@ -242,7 +242,7 @@ public class TACGenerator {
 
             Node expressio = suffix.getChildren().get(1);
 
-            String funcName =   expressio
+            /*String funcName =   expressio
                     .getChildren().get(0)
                     .getChildren().get(0)
                     .getChildren().get(0)
@@ -260,7 +260,7 @@ public class TACGenerator {
                 code.add(tmp + " = call " + funcName);
                 stack.push(tmp);
                 return;
-            }
+            }*/
 
             start(expressio);
             String val = getLastTemp();
