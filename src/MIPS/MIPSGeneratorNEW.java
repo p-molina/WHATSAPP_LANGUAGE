@@ -19,6 +19,7 @@ public class MIPSGeneratorNEW {
 
     private final Set<String> globalVars = new HashSet<>();
 
+
     public MIPSGeneratorNEW() {
         varRegisterMap = new HashMap<>();
         floatLabels = new HashMap<>();
@@ -143,7 +144,7 @@ public class MIPSGeneratorNEW {
     private void handleReturn(String line) {
         try {
             String[] parts = line.split(" ");
-            if (parts.length == 2) {
+            if (parts.length == 2 && !parts[1].equals("null")) {
                 String value = parts[1];
 
                 if (isFloat(value)) {
@@ -158,6 +159,9 @@ public class MIPSGeneratorNEW {
                         writer.write("  move $v0, " + reg + "\n");
                     }
                 }
+            } else {
+                // return null o sense valor explícit
+                writer.write("  li $v0, 0\n");
             }
 
             writer.write("  jr $ra\n");
@@ -166,6 +170,8 @@ public class MIPSGeneratorNEW {
             System.err.println("Error writing return: " + e.getMessage());
         }
     }
+
+
 
     private void handleGoto(String line) {
         try {
@@ -184,15 +190,22 @@ public class MIPSGeneratorNEW {
 
 
     private void handleConditionalJump(String line) {
-        // TODO
+        try {
+            String[] parts = line.replace("if", "").trim().split("goto");
+            String condVar = parts[0].trim();
+            String label = parts[1].trim();
+            String reg = getRegister(condVar);
+            writer.write("  bne " + reg + ", $zero, " + label + "\n");
+        } catch (IOException e) {
+            System.err.println("Error writing conditional jump: " + e.getMessage());
+        }
     }
 
     private void handleAssignment(String line) {
         try {
             String[] parts = line.split("=");
-            String left = parts[0].trim();   // t0
-            String expr = parts[1].trim();   // pot ser 5, t1, t1 + t2, etc.
-
+            String left = parts[0].trim();
+            String expr = parts[1].trim();
             String[] tokens = expr.split(" ");
             String destReg = getRegister(left);
 
@@ -214,7 +227,8 @@ public class MIPSGeneratorNEW {
                 String operator = tokens[1];
                 String op2 = tokens[2];
 
-                boolean isFloatOp = isFloat(op1) || isFloat(op2) || isFloatRegister(getRegister(op1)) || isFloatRegister(getRegister(op2));
+                boolean isFloatOp = isFloat(op1) || isFloat(op2) ||
+                        isFloatRegister(getRegister(op1)) || isFloatRegister(getRegister(op2));
 
                 if (isFloatOp) {
                     String fregDest = getFloatRegister(left);
@@ -227,7 +241,6 @@ public class MIPSGeneratorNEW {
                         case "*": writer.write("  mul.s " + fregDest + ", " + freg1 + ", " + freg2 + "\n"); break;
                         case "/": writer.write("  div.s " + fregDest + ", " + freg1 + ", " + freg2 + "\n"); break;
                     }
-
                 } else {
                     String r1 = getRegister(op1);
                     String r2 = getRegister(op2);
@@ -236,17 +249,41 @@ public class MIPSGeneratorNEW {
                         case "+": writer.write("  add " + destReg + ", " + r1 + ", " + r2 + "\n"); break;
                         case "-": writer.write("  sub " + destReg + ", " + r1 + ", " + r2 + "\n"); break;
                         case "*": writer.write("  mul " + destReg + ", " + r1 + ", " + r2 + "\n"); break;
-                        case "/": writer.write("  div " + r1 + ", " + r2 + "\n");  // resultat queda a lo/hi
-                            writer.write("  mflo " + destReg + "\n"); break;
+                        case "/":
+                            writer.write("  div " + r1 + ", " + r2 + "\n");
+                            writer.write("  mflo " + destReg + "\n");
+                            break;
+                        case "<":
+                            writer.write("  slt " + destReg + ", " + r1 + ", " + r2 + "\n");
+                            break;
+                        case ">":
+                            writer.write("  slt " + destReg + ", " + r2 + ", " + r1 + "\n");
+                            break;
+                        case "<=":
+                            writer.write("  slt $at, " + r2 + ", " + r1 + "\n");
+                            writer.write("  xori " + destReg + ", $at, 1\n");
+                            break;
+                        case ">=":
+                            writer.write("  slt $at, " + r1 + ", " + r2 + "\n");
+                            writer.write("  xori " + destReg + ", $at, 1\n");
+                            break;
+                        case "==":
+                            writer.write("  xor $at, " + r1 + ", " + r2 + "\n");
+                            writer.write("  sltiu " + destReg + ", $at, 1\n");
+                            break;
+                        case "!=":
+                            writer.write("  xor $at, " + r1 + ", " + r2 + "\n");
+                            writer.write("  sltu " + destReg + ", $zero, $at\n");
+                            break;
                     }
                 }
-
             }
 
         } catch (IOException e) {
             System.err.println("Error writing assignment: " + e.getMessage());
         }
     }
+
 
 
     private String getRegister(String var) {

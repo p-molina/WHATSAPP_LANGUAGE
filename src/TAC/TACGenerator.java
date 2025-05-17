@@ -137,14 +137,28 @@ public class TACGenerator {
     private void handleReturn(Node node) {
         start(node.getChildren().get(1)); // <EXPRESSIO>
 
-        String val =    node.getChildren().get(1)
-                        .getChildren().get(0)
-                        .getChildren().get(0)
-                        .getChildren().get(0)
-                        .getToken().getLexeme();
+        // Busquem el primer token no nul dins de l'expressió
+        Token token = findFirstToken(node.getChildren().get(1));
+        if (token == null) {
+            System.err.println("Error: no s'ha pogut trobar cap token dins del return.");
+            return;
+        }
 
-        code.add("return " + varToTemp.get(val));
+        String val = token.getLexeme();
+        String tmp = varToTemp.get(val);
+        code.add("return " + tmp);
     }
+
+    private Token findFirstToken(Node node) {
+        if (node == null) return null;
+        if (node.getToken() != null) return node.getToken();
+        for (Node child : node.getChildren()) {
+            Token t = findFirstToken(child);
+            if (t != null) return t;
+        }
+        return null;
+    }
+
 
     private void handleAssignation(Node node) {
         Node expr = node.getChildren().get(1); // <EXPRESSIO>

@@ -9,7 +9,7 @@ import LexicalAnalyzer.LexicalAnalyzer;
 import java.util.List;
 
 public class Main {
-    static String wspFilePath = "testing/testOriol.wsp";
+    static String wspFilePath = "testing/testJan.wsp";
     static String tacFilePath = "outputFiles/tac/tac_testOriol.txt";
     static String mipsFilePath = "outputFiles/mips/mips_testOriol.asm";
     static String dicionaryFilePath = "resources/diccionari.json";
