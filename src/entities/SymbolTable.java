@@ -12,6 +12,15 @@ public class SymbolTable {
     // mapa: scope -> (nom símbol -> Symbol)
     private final Map<Integer, Map<String, Symbol>> table = new HashMap<>();
 
+    public Symbol lookup(String name) {
+        // Busquem des del scope més profund cap al global
+        return getSymbol(name, getMaxScope());
+    }
+
+    private int getMaxScope() {
+        return table.keySet().stream().max(Integer::compareTo).orElse(0);
+    }
+
     public void addSymbol(String name, String type, int scope, int line, int column) {
         // Si el scope no existeix, el creem
         table.putIfAbsent(scope, new HashMap<>());

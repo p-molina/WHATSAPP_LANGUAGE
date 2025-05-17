@@ -1,25 +1,41 @@
 package TAC;
 
 import entities.Node;
+import entities.Symbol;
+import entities.SymbolTable;
 import entities.Token;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+
+/**
+ * TACGenerator is responsible for generating Three-Address Code (TAC)
+ * from the abstract syntax tree (AST) of a program using a symbol table.
+ */
 public class TACGenerator {
-    private final List<String> code = new ArrayList<>();
-    private final Deque<String> stack = new ArrayDeque<>();
-    private final Map<String, String> varToTemp = new HashMap<>();
-    private final Map<String, String> literalToTemp = new HashMap<>();
-    private ArrayList<String> functions = new ArrayList<>();
-    private int labelCounter = 0;
-    private int tempCounter = 0;
-    private String currentId = null;
+    private final List<String> code = new ArrayList<>();                // TAC code
+    private final Deque<String> stack = new ArrayDeque<>();             // Stack for temporary variables
+    private final Map<String, String> literalToTemp = new HashMap<>();  // Map for literals to temporary variables
+    private final Map<String, String> varToTemp = new HashMap<>();      // Map for variables to temporary variables
+    private int labelCounter = 0;                                       // Label counter
+    private int tempCounter = 0;                                        // Temporary variable counter
+    private String currentId = null;                                    // Current ID for assignment
+    private SymbolTable symbolTable;                                    // Symbol table
+    private final Set<String> functions = new HashSet<>();              // Set of function names
 
     public TACGenerator() {}
 
-    public void generateFile(Node root, String filename) {
+    /**
+     * Generates TAC code for the given AST and writes it to a file.
+     *
+     * @param root        the root node of the AST
+     * @param symbolTable the symbol table for variables
+     * @param filename    the file where the TAC will be written
+     */
+    public void generateFile(Node root, SymbolTable symbolTable, String filename) {
+        this.symbolTable = symbolTable;
         labelCounter = 0;
         tempCounter = 0;
 
@@ -30,15 +46,17 @@ public class TACGenerator {
                 writer.write(line + System.lineSeparator());
             }
         } catch (IOException e) {
-            System.err.println("Error escrivint el TAC: " + e.getMessage());
+            System.err.println("Error writing TAC: " + e.getMessage());
         }
-
-
-        cleanCodeFile(filename);
     }
 
+    /**
+     * Dispatches processing to the appropriate handler based on node type.
+     */
     private void start(Node node) {
-        // Detectem assignacions del tipus: ID -> EXPRESSIO;
+        if (node == null) return;
+
+        // Assignation detection
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 2) {
             Node first = node.getChildren().get(0);
             Node second = node.getChildren().get(1);
@@ -65,148 +83,59 @@ public class TACGenerator {
         }
     }
 
+    /**
+     * Handles the main function node.
+     */
     private void handleMain(Node node) {
-        Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
-        Node idNode = unitTail.getChildren().get(0); // ID
-        String funcName = idNode.getToken().getLexeme();
+        Node unitTail = node.getChildren().get(1);
+        String funcName = unitTail.getChildren().get(0).getToken().getLexeme();
         code.add("\n" + funcName + ":");
-
-        Node body = unitTail.getChildren().get(2); // <DECL_OR_FUNC_TAIL>
-        start(body);
+        start(unitTail.getChildren().get(2));
     }
 
-    private String handleCondition(Node node) {
-        // node ::= <COMPARACIO> <CONDICIO'>
-        start(node.getChildren().get(0)); // <COMPARACIO>
-        return getLastTemp();
-    }
-
+    /**
+     * Handles a function declaration.
+     */
     private void handleFunction(Node node) {
-        Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
-        Node idNode = unitTail.getChildren().get(0); // ID
-        String funcName = idNode.getToken().getLexeme();
+        Node unitTail = node.getChildren().get(1);
+        String funcName = unitTail.getChildren().get(0).getToken().getLexeme();
         functions.add(funcName);
         code.add("\n" + funcName + ":");
-
-        Node declOrFuncTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
-        Node declOrFuncTailRest = declOrFuncTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL_REST>
-        Node body = declOrFuncTailRest.getChildren().get(0); // <BODY>
-        start(body);
+        start(unitTail.getChildren().get(1).getChildren().get(1).getChildren().get(0));
     }
 
-    private void handleWhile(Node node) {
-        String Lstart = newLabel();
-        String Lbucle = newLabel();
-        String Lend = newLabel();
-
-        code.add(Lstart + ":");
-
-        Node condNode = node.getChildren().get(2); // <CONDICIO>
-        String condTmp = handleCondition(condNode);
-
-        code.add("if " + condTmp + " goto " + Lbucle);
-        code.add("goto " + Lend);
-
-        code.add("\n" + Lbucle + ":");
-        Node bodyNode = node.getChildren().get(5); // <BODY>
-        start(bodyNode);
-
-        code.add("goto " + Lstart);
-        code.add("\n" + Lend + ":");
-    }
-
-    private void handleIf(Node node) {
-        String Lthen = newLabel();
-        String Lend = newLabel();
-
-        Node condNode = node.getChildren().get(2); // <CONDICIO>
-        String condTmp = handleCondition(condNode);
-
-        code.add("if " + condTmp + " goto " + Lthen);
-
-        boolean hasElse = node.getChildren().size() == 8;
-        if (hasElse) {
-            start(node.getChildren().get(7)); // ELSE
-            code.add("goto " + Lend);
-            code.add("\n" + Lthen + ":");
-            start(node.getChildren().get(5)); // IF
-        } else {
-            code.add("goto " + Lend);
-            code.add("\n" + Lthen + ":");
-            start(node.getChildren().get(5));
-        }
-
-        code.add("\n" + Lend + ":");
-    }
-
-    private void handleReturn(Node node) {
-        //start(node.getChildren().get(1)); // <EXPRESSIO>
-
-        Token token = findFirstToken(node.getChildren().get(1));
-
-        if (Objects.equals(token.getType(), "ID")) {
-            //System.out.println("ID: " + token.getLexeme());
-            String lex = varToTemp.get(token.getLexeme());
-            code.add("return " + lex);
-        } else {
-            //System.out.println("Literal: " + token.getLexeme());
-            code.add("return " + token.getLexeme());
-        }
-    }
-
-    private Token findFirstToken(Node node) {
-        if (node == null) return null;
-        if (node.getToken() != null) return node.getToken();
-        for (Node child : node.getChildren()) {
-            Token t = findFirstToken(child);
-            if (t != null) return t;
-        }
-        return null;
-    }
-
-
+    /**
+     * Handles a variable assignment, including function call assignments.
+     */
     private void handleAssignation(Node node) {
-        Node expr = node.getChildren().get(1); // <EXPRESSIO>
-        String funcName =   expr
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getToken().getLexeme();
+        Node expr = node.getChildren().get(1);
+
+        String funcName = expr
+                .getChildren().get(0)
+                .getChildren().get(0)
+                .getChildren().get(0)
+                .getToken().getLexeme();
+
+        String destTemp = getOrCreateTempForVariable(currentId);
 
         if (functions.contains(funcName)) {
-            String tmp;
-            if (varToTemp.containsKey(currentId)) {
-                tmp = varToTemp.get(currentId);
-            } else {
-                tmp = newTemp();
-                varToTemp.put(currentId, tmp);
-            }
-
-            code.add(tmp + " = call " + funcName);
-            stack.push(tmp);
+            code.add(destTemp + " = call " + funcName);
+            stack.push(destTemp);
             return;
         }
 
-        // Comportament normal per a assignacions
         start(expr);
         String val = getLastTemp();
-
-        String tmp;
-        if (varToTemp.containsKey(currentId)) {
-            tmp = varToTemp.get(currentId);
-        } else {
-            tmp = newTemp();
-            varToTemp.put(currentId, tmp);
-        }
-
-        code.add(tmp + " = " + val);
-        stack.push(tmp);
+        code.add(destTemp + " = " + val);
+        stack.push(destTemp);
     }
 
+    /**
+     * Handles arithmetic operations.
+     */
     private void handleOperation(Node node) {
         if (node.getChildren().isEmpty()) return;
 
-        // Avaluar operand esquerre
         Node leftNode = node.getChildren().get(0);
         start(leftNode);
         String left = extractOperand(leftNode);
@@ -218,19 +147,15 @@ public class TACGenerator {
                 String op = tail.getChildren().get(0).getToken().getType();
                 Node rightNode = tail.getChildren().get(1);
 
-                // Avaluar operand dret
                 start(rightNode);
-
                 String right = extractOperand(rightNode);
+
                 String tmp = newTemp();
-
-                code.add(tmp + " = " + left + " " + map(op) + " " + right);
+                code.add(tmp + " = " + left + " " + mapOperator(op) + " " + right);
                 stack.push(tmp);
-                //System.out.println("Operació: " + left + " " + map(op) + " " + right);
 
-                // Si hi ha més operacions en cadena, continua
                 if (tail.getChildren().size() == 3) {
-                    left = tmp;  // la nova esquerra és el resultat parcial
+                    left = tmp;
                     tail = tail.getChildren().get(2);
                 } else {
                     break;
@@ -239,6 +164,9 @@ public class TACGenerator {
         }
     }
 
+    /**
+     * Handles comparison expressions.
+     */
     private void handleComparation(Node node) {
         if (node.getChildren().size() == 2) {
             Node left = node.getChildren().get(0);
@@ -255,7 +183,7 @@ public class TACGenerator {
                     String rightVal = getLastTemp();
                     String leftVal = getLastTemp();
                     String tmp = newTemp();
-                    String op = map(opToken.getType());
+                    String op = mapOperator(opToken.getType());
 
                     code.add(tmp + " = " + leftVal + " " + op + " " + rightVal);
                     stack.push(tmp);
@@ -266,58 +194,102 @@ public class TACGenerator {
         }
     }
 
-    private void handleDeclaration(Node node) {
-        String id = node.getChildren().get(1).getToken().getLexeme();
-        Node suffix = node.getChildren().get(2); // <LOCAL_DECL_SUFFIX>
+    /**
+     * Handles a return statement.
+     */
+    private void handleReturn(Node node) {
+        Token token = findFirstToken(node.getChildren().get(1));
+        if (token == null) return;
 
-        // Declaració amb assignació
-        if (suffix.getChildren().size() >= 2 &&
-                "EQUAL_ASSIGNATION".equals(suffix.getChildren().get(0).getToken().getType())) {
-
-            Node expressio = suffix.getChildren().get(1);
-
-            start(expressio);
-
-            String val =    expressio
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getToken().getLexeme();
-
-            if (!varToTemp.containsKey(val) && !literalToTemp.containsKey(val)) {
-                String tmp = newTemp();
-                varToTemp.put(id, tmp);
-                literalToTemp.put(val, tmp);
-                code.add(tmp + " = " + val);
-            } else {
-                String tmp = varToTemp.getOrDefault(val, literalToTemp.get(val));
-                varToTemp.put(id, tmp);
-                code.add(tmp + " = " + val);
-                //System.out.println("Declaració: " + id + " -> " + tmp);
-            }
+        if ("ID".equals(token.getType())) {
+            String temp = getOrCreateTempForVariable(token.getLexeme());
+            code.add("return " + temp);
+        } else {
+            code.add("return " + token.getLexeme());
         }
     }
 
-    private void handleGlobalDeclaration(Node node) {
-        Node unitTail = node.getChildren().get(1); // <UNIT_TAIL>
-        Token idToken = unitTail.getChildren().get(0).getToken();
-        String id = idToken.getLexeme();
+    /**
+     * Handles a local variable declaration.
+     */
+    private void handleDeclaration(Node node) {
+        String id = node.getChildren().get(1).getToken().getLexeme();
+        Node suffix = node.getChildren().get(2);
 
-        Node declTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
-        Node exprNode = declTail.getChildren().get(1); // <EXPRESSIO>
+        if (suffix.getChildren().size() >= 2 &&
+                "EQUAL_ASSIGNATION".equals(suffix.getChildren().get(0).getToken().getType())) {
 
-        String val =    exprNode.getChildren()
-                        .get(0).getChildren()
-                        .get(0).getChildren()
-                        .get(0).getChildren()
-                        .get(0).getToken().getLexeme();
+            Node expr = suffix.getChildren().get(1);
+            start(expr);
 
-        String tmp = newTemp();
-        varToTemp.put(id, tmp);
-        code.add(tmp + " = " + val);
+            String val = getLastTemp();
+            String temp = getOrCreateTempForVariable(id);
+            code.add(temp + " = " + val);
+        }
     }
 
+
+    /**
+     * Handles a global variable declaration.
+     */
+    private void handleGlobalDeclaration(Node node) {
+        Node unitTail = node.getChildren().get(1);
+        String id = unitTail.getChildren().get(0).getToken().getLexeme();
+
+        Node exprNode = unitTail.getChildren().get(1).getChildren().get(1);
+        String val = exprNode.getChildren()
+                .get(0).getChildren()
+                .get(0).getChildren()
+                .get(0).getChildren()
+                .get(0).getToken().getLexeme();
+
+        String temp = getOrCreateTempForVariable(id);
+        code.add(temp + " = " + val);
+    }
+
+    /**
+     * Handles a while loop.
+     */
+    private void handleWhile(Node node) {
+        String Lstart = newLabel(), Lbody = newLabel(), Lend = newLabel();
+        code.add(Lstart + ":");
+
+        String cond = handleCondition(node.getChildren().get(2));
+        code.add("if " + cond + " goto " + Lbody);
+        code.add("goto " + Lend);
+
+        code.add("\n" + Lbody + ":");
+        start(node.getChildren().get(5));
+        code.add("goto " + Lstart);
+        code.add("\n" + Lend + ":");
+    }
+
+    /**
+     * Handles an if/else conditional.
+     */
+    private void handleIf(Node node) {
+        String Lthen = newLabel(), Lend = newLabel();
+        String cond = handleCondition(node.getChildren().get(2));
+        code.add("if " + cond + " goto " + Lthen);
+
+        boolean hasElse = node.getChildren().size() == 8;
+        if (hasElse) {
+            start(node.getChildren().get(7)); // ELSE
+            code.add("goto " + Lend);
+            code.add("\n" + Lthen + ":");
+            start(node.getChildren().get(5)); // THEN
+        } else {
+            code.add("goto " + Lend);
+            code.add("\n" + Lthen + ":");
+            start(node.getChildren().get(5));
+        }
+
+        code.add("\n" + Lend + ":");
+    }
+
+    /**
+     * Recursively processes unknown or generic nodes.
+     */
     private void handleOthers(Node node) {
         for (Node child : node.getChildren()) {
             start(child);
@@ -328,36 +300,63 @@ public class TACGenerator {
             switch (tok.getType()) {
                 case "INT_VALUE", "FLOAT_VALUE", "CHAR_VALUE" -> {
                     String value = tok.getLexeme();
-                    String tmp;
-
-                    if (literalToTemp.containsKey(value)) {
-                        tmp = literalToTemp.get(value);
-                    } else {
-                        tmp = newTemp();
-                        literalToTemp.put(value, tmp);
-                        code.add(tmp + " = " + value);
-                    }
-
+                    String tmp = literalToTemp.computeIfAbsent(value, v -> {
+                        String t = newTemp();
+                        code.add(t + " = " + v);
+                        return t;
+                    });
                     stack.push(tmp);
                 }
-
                 case "ID" -> {
                     String lex = tok.getLexeme();
-                    String tmp;
-
-                    if (!varToTemp.containsKey(lex)) {
-                        tmp = newTemp();
-                        varToTemp.put(lex, tmp);
-                    } else {
-                        tmp = varToTemp.get(lex);
-                    }
+                    String tmp = getOrCreateTempForVariable(lex);
                     stack.push(tmp);
                 }
-
             }
         }
     }
 
+    /**
+     * Returns the temporary variable assigned to a variable,
+     * creating one if it doesn't exist.
+     */
+    private String getOrCreateTempForVariable(String id) {
+        if (!varToTemp.containsKey(id)) {
+            Symbol symbol = symbolTable.lookup(id);
+            if (symbol == null) {
+                throw new RuntimeException("Undeclared variable: " + id);
+            }
+
+            String temp = newTemp();
+            varToTemp.put(id, temp);
+        }
+        return varToTemp.get(id);
+    }
+
+    /**
+     * Handles a condition by processing its comparison node.
+     */
+    private String handleCondition(Node node) {
+        start(node.getChildren().get(0)); // comparation
+        return getLastTemp();
+    }
+
+    /**
+     * Returns the first token found in a subtree.
+     */
+    private Token findFirstToken(Node node) {
+        if (node == null) return null;
+        if (node.getToken() != null) return node.getToken();
+        for (Node child : node.getChildren()) {
+            Token t = findFirstToken(child);
+            if (t != null) return t;
+        }
+        return null;
+    }
+
+    /**
+     * Detects the kind of the given node.
+     */
     private NodeKind getNodeKind(Node node) {
         List<Node> children = node.getChildren();
         if (children.isEmpty()) return NodeKind.OTHER;
@@ -371,35 +370,32 @@ public class TACGenerator {
                     return NodeKind.MAIN;
                 } else if (unitTail.getChildren().size() >= 2) {
                     Node tailNode = unitTail.getChildren().get(1);
-                    if (tailNode.getSymbol().equals("<DECL_OR_FUNC_TAIL>")
-                            && tailNode.getChildren().size() >= 2
-                            && tailNode.getChildren().get(0).getToken() != null
-                            && "OPEN_CLAUDATOR".equals(tailNode.getChildren().get(0).getToken().getType())) {
+                    if (tailNode.getSymbol().equals("<DECL_OR_FUNC_TAIL>") &&
+                            tailNode.getChildren().size() >= 2 &&
+                            tailNode.getChildren().get(0).getToken() != null &&
+                            "OPEN_CLAUDATOR".equals(tailNode.getChildren().get(0).getToken().getType())) {
                         return NodeKind.FUNCTION;
                     }
                 }
             }
         }
 
-        // Declaració global: <UNIT> ::= <TIPUS> ID -> EXPRESSIO
         if (node.getSymbol().equals("<UNIT>") && node.getChildren().size() == 2) {
             Node unitTail = node.getChildren().get(1);
             if (unitTail.getSymbol().equals("<UNIT_TAIL>") &&
                     unitTail.getChildren().size() == 2 &&
-                    unitTail.getChildren().get(0).getToken() != null &&  // ID
+                    unitTail.getChildren().get(0).getToken() != null &&
                     "ID".equals(unitTail.getChildren().get(0).getToken().getType())) {
-
                 Node declTail = unitTail.getChildren().get(1);
                 if (declTail.getSymbol().equals("<DECL_OR_FUNC_TAIL>") &&
-                        declTail.getChildren().size() == 3 &&
+                        !declTail.getChildren().isEmpty() &&
+                        declTail.getChildren().get(0).getToken() != null &&
                         "EQUAL_ASSIGNATION".equals(declTail.getChildren().get(0).getToken().getType())) {
                     return NodeKind.GLOBAL_DECLARATION;
                 }
             }
         }
 
-
-        // Declaració local: <CONTENT> ::= <TIPUS> ID <LOCAL_DECL_SUFFIX> LINE_DELIMITER
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 3) {
             Node tipus = node.getChildren().get(0);
             Node idNode = node.getChildren().get(1);
@@ -412,10 +408,10 @@ public class TACGenerator {
             }
         }
 
-        if (node.getSymbol().equals("<ID_CONTENT>")
-                && !node.getChildren().isEmpty()
-                && node.getChildren().get(0).getToken() != null
-                && "EQUAL_ASSIGNATION".equals(node.getChildren().get(0).getToken().getType())) {
+        if (node.getSymbol().equals("<ID_CONTENT>") &&
+                !node.getChildren().isEmpty() &&
+                node.getChildren().get(0).getToken() != null &&
+                "EQUAL_ASSIGNATION".equals(node.getChildren().get(0).getToken().getType())) {
             return NodeKind.ASSIGNATION;
         }
 
@@ -443,88 +439,33 @@ public class TACGenerator {
         return NodeKind.OTHER;
     }
 
-    private String extractOperand(Node node) {
-        if (Objects.equals(node.getChildren().get(0).getSymbol(), "ID")) {
-            //System.out.println("1ID: " + node.getChildren().get(0).getToken().getLexeme());
-            String lex = node.getChildren().get(0).getToken().getLexeme();
-            if (varToTemp.containsKey(lex)) {
-                return varToTemp.get(lex);
-            } else return literalToTemp.getOrDefault(lex, lex);
-        } else if (Objects.equals(node.getChildren().get(0).getChildren().get(0).getSymbol(), "ID")) {
-            //System.out.println("2ID: " + node.getChildren().get(0).getChildren().get(0).getToken().getLexeme());
-            String lex = node.getChildren().get(0).getChildren().get(0).getToken().getLexeme();
-            if (varToTemp.containsKey(lex)) {
-                return varToTemp.get(lex);
-            } else return literalToTemp.getOrDefault(lex, lex);
-        } else if (Objects.equals(node.getChildren().get(0).getSymbol(), "<VALOR>")) {
-            //System.out.println("3ID: " + node.getChildren().get(0).getChildren().get(0).getToken().getLexeme());
-            String lex = node.getChildren().get(0).getChildren().get(0).getToken().getLexeme();
-            if (varToTemp.containsKey(lex)) {
-                return varToTemp.get(lex);
-            } else return literalToTemp.getOrDefault(lex, lex);
-        } else if (Objects.equals(node.getChildren().get(0).getSymbol(), "<FACTOR>")) {
-            //System.out.println("4ID: " + node.getChildren().get(0).getChildren().get(0).getChildren().get(0).getToken().getLexeme());
-            String lex = node.getChildren().get(0).getChildren().get(0).getChildren().get(0).getToken().getLexeme();
-            if (varToTemp.containsKey(lex)) {
-                return varToTemp.get(lex);
-            } else return literalToTemp.getOrDefault(lex, lex);
-        } else {
-            return "??";
-        }
+
+    // --- Utilities ---
+    private String newLabel() {
+        return "L" + labelCounter++;
     }
 
-    public void cleanCodeFile(String path) {
-        try {
-            List<String> lines = new ArrayList<>();
-            try (Scanner scanner = new Scanner(new java.io.File(path))) {
-                while (scanner.hasNextLine()) {
-                    lines.add(scanner.nextLine().trim());
-                }
-            }
-
-            List<String> cleaned = new ArrayList<>();
-            String last = "";
-
-            for (String line : lines) {
-                // Si és igual a la línia anterior, ignora-la
-                if (line.equals(last)) continue;
-
-                // Si són dues assignacions a la mateixa temp amb el mateix valor
-                if (line.matches("t\\d+ = .+")) {
-                    String[] parts = line.split(" = ");
-                }
-
-                cleaned.add(line);
-                last = line;
-            }
-
-            try (FileWriter writer = new FileWriter(path)) {
-                for (String line : cleaned) {
-                    writer.write(line + System.lineSeparator());
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error netejant el fitxer TAC: " + e.getMessage());
-        }
+    private String newTemp() {
+        return "t" + tempCounter++;
     }
-
-
 
     private String getLastTemp() {
         return stack.isEmpty() ? "??" : stack.pop();
     }
 
-    private String newLabel() {
-        return "L" + (labelCounter++);
+    private String extractOperand(Node node) {
+        Token token = findFirstToken(node);
+        if (token == null) return "??";
+
+        String lex = token.getLexeme();
+        if ("ID".equals(token.getType())) {
+            return getOrCreateTempForVariable(lex);
+        }
+        return literalToTemp.getOrDefault(lex, lex);
     }
 
-    private String newTemp() {
-        return "t" + (tempCounter++);
-    }
-
-    private static String map(String t) {
-        return switch (t) {
+    private String mapOperator(String type) {
+        return switch (type) {
             case "SUM" -> "+";
             case "MINUS" -> "-";
             case "MULTIPLY" -> "*";
@@ -540,16 +481,7 @@ public class TACGenerator {
     }
 
     private enum NodeKind {
-        MAIN,
-        FUNCTION,
-        WHILE,
-        IF,
-        RETURN,
-        ASSIGNATION,
-        OPERATION,
-        COMPARATION,
-        DECLARATION,
-        GLOBAL_DECLARATION,
-        OTHER
+        MAIN, FUNCTION, WHILE, IF, RETURN, ASSIGNATION, OPERATION, COMPARATION,
+        DECLARATION, GLOBAL_DECLARATION, OTHER
     }
 }

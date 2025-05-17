@@ -66,8 +66,12 @@ public class Main {
         SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer(tree, symbolTable);
         semanticAnalyzer.analyze();
 
+
         TACGenerator tac = new TACGenerator();
-        tac.generateFile(tree, tacFilePath);
+        tac.generateFile(tree, symbolTable, tacFilePath);
+
+        //TACGenerator tac = new TACGenerator();
+        //tac.generateFile(tree, tacFilePath);
         System.out.println("TAC file generated at: " + tacFilePath);
 
         MIPSGenerator mipsGen = new MIPSGenerator();

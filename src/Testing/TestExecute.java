@@ -95,7 +95,7 @@ public class TestExecute {
                 String tacPath = "resources/tests/production/tac/" + test.getId() + ".tac";
                 Files.createDirectories(Paths.get("resources/tests/production/tac/"));
                 TACGenerator tacGen = new TACGenerator();
-                tacGen.generateFile(syntaxTree, tacPath);
+                tacGen.generateFile(syntaxTree, symbolTable, tacPath);
                 System.out.println("  [OK] TAC generated at " + tacPath);
 
                 // Generate MIPS
