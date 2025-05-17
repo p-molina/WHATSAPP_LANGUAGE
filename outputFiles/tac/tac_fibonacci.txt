@@ -1,24 +1,30 @@
 t0 = 10
+t1 = 0
+t2 = 0
+t3 = 0
+t4 = 0
 
 fibonacci:
-t1 = 2
-t2 = t0 < t1
-if t2 goto L0
-t3 = 1
-t4 = t0 - t3
-t0 = t4
-t0 = call fibonacci
-t5 = t0 - t3
-t0 = t5
-t0 = call fibonacci
-t9 = t7 + t8
-t6 = t9
+t5 = 2
+t6 = t0 < t5
+if t6 goto L0
+t7 = 1
+t8 = t0 - t7
+t0 = t8
+t2 = call fibonacci
+t9 = t0 - t7
+t0 = t9
+t3 = call fibonacci
+t10 = t1 + t3
+t1 = t10
 goto L1
+
 L0:
-t6 = t0
+t1 = t1
+
 L1:
-return t6
+return t1
 
 xat:
-t6 = call fibonacci
-return t10
+t4 = call fibonacci
+return t4

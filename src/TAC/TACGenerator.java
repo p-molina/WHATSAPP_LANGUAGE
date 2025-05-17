@@ -123,21 +123,27 @@ public class TACGenerator {
         if (hasElse) {
             start(node.getChildren().get(7)); // ELSE
             code.add("goto " + Lend);
-            code.add(Lthen + ":");
+            code.add("\n" + Lthen + ":");
             start(node.getChildren().get(5)); // IF
         } else {
             code.add("goto " + Lend);
-            code.add(Lthen + ":");
+            code.add("\n" + Lthen + ":");
             start(node.getChildren().get(5));
         }
 
-        code.add(Lend + ":");
+        code.add("\n" + Lend + ":");
     }
 
     private void handleReturn(Node node) {
         start(node.getChildren().get(1)); // <EXPRESSIO>
-        String val = getLastTemp();
-        code.add("return " + val);
+
+        String val =    node.getChildren().get(1)
+                        .getChildren().get(0)
+                        .getChildren().get(0)
+                        .getChildren().get(0)
+                        .getToken().getLexeme();
+
+        code.add("return " + varToTemp.get(val));
     }
 
     private void handleAssignation(Node node) {
@@ -181,22 +187,29 @@ public class TACGenerator {
     private void handleOperation(Node node) {
         if (node.getChildren().isEmpty()) return;
 
-        start(node.getChildren().get(0));
+        // Avaluar operand esquerre
+        Node leftNode = node.getChildren().get(0);
+        start(leftNode);
+        String left = extractOperand(leftNode);
 
         if (node.getChildren().size() == 2) {
             Node tail = node.getChildren().get(1);
+
             while (tail.getChildren().size() >= 2) {
                 String op = tail.getChildren().get(0).getToken().getType();
-                start(tail.getChildren().get(1));
+                Node rightNode = tail.getChildren().get(1);
 
-                String right = getLastTemp();
-                String left = getLastTemp();
+                // Avaluar operand dret
+                start(rightNode);
+                String right = extractOperand(rightNode);
+
                 String tmp = newTemp();
-
                 code.add(tmp + " = " + left + " " + map(op) + " " + right);
                 stack.push(tmp);
 
+                // Si hi ha més operacions en cadena, continua
                 if (tail.getChildren().size() == 3) {
+                    left = tmp;  // la nova esquerra és el resultat parcial
                     tail = tail.getChildren().get(2);
                 } else {
                     break;
@@ -242,26 +255,6 @@ public class TACGenerator {
 
             Node expressio = suffix.getChildren().get(1);
 
-            /*String funcName =   expressio
-                    .getChildren().get(0)
-                    .getChildren().get(0)
-                    .getChildren().get(0)
-                    .getToken().getLexeme();
-
-            if (functions.contains(funcName)) {
-                String tmp;
-                if (varToTemp.containsKey(currentId)) {
-                    tmp = varToTemp.get(currentId);
-                } else {
-                    tmp = newTemp();
-                    varToTemp.put(currentId, tmp);
-                }
-
-                code.add(tmp + " = call " + funcName);
-                stack.push(tmp);
-                return;
-            }*/
-
             start(expressio);
             String val = getLastTemp();
 
@@ -284,19 +277,16 @@ public class TACGenerator {
         Node declTail = unitTail.getChildren().get(1); // <DECL_OR_FUNC_TAIL>
         Node exprNode = declTail.getChildren().get(1); // <EXPRESSIO>
 
-        start(exprNode);
-        String val = getLastTemp();
+        String val =    exprNode.getChildren()
+                        .get(0).getChildren()
+                        .get(0).getChildren()
+                        .get(0).getChildren()
+                        .get(0).getToken().getLexeme();
 
-        if (literalToTemp.containsValue(val)) {
-            varToTemp.put(id, val); // assigna directament la temp literal
-        } else {
-            String tmp = newTemp();
-            varToTemp.put(id, tmp);
-            code.add(tmp + " = " + val);
-        }
-
+        String tmp = newTemp();
+        varToTemp.put(id, tmp);
+        code.add(tmp + " = " + val);
     }
-
 
     private void handleOthers(Node node) {
         for (Node child : node.getChildren()) {
@@ -421,6 +411,46 @@ public class TACGenerator {
 
         return NodeKind.OTHER;
     }
+
+    private String extractOperand(Node node) {
+        try {
+            Token token =   node
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getToken();
+
+            if (token != null) {
+                String lex = token.getLexeme();
+                String type = token.getType();
+
+                // Literal
+                if (type.equals("INT_VALUE") || type.equals("FLOAT_VALUE") || type.equals("CHAR_VALUE")) {
+                    if (!literalToTemp.containsKey(lex)) {
+                        String tmp = newTemp();
+                        code.add(tmp + " = " + lex);
+                        literalToTemp.put(lex, tmp);
+                    }
+                    return literalToTemp.get(lex);
+                }
+
+                // Identificador (variable)
+                if (type.equals("ID")) {
+                    if (!varToTemp.containsKey(lex)) {
+                        String tmp = newTemp();
+                        varToTemp.put(lex, tmp);
+                    }
+                    return varToTemp.get(lex);
+                }
+            }
+        } catch (Exception e) {
+            // Fallback per seguretat
+        }
+
+        // Si no es pot identificar, fem servir l'última temp generada
+        return getLastTemp();
+    }
+
 
     private String getLastTemp() {
         return stack.isEmpty() ? "??" : stack.pop();
