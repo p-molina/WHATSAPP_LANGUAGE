@@ -1,4 +1,3 @@
-// src/entities/Symbol.java
 package entities;
 
 public class Symbol {
