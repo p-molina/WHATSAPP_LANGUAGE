@@ -468,48 +468,6 @@ public class TACGenerator {
         } else {
             return "??";
         }
-
-        /*
-        try {
-            Token token =   node
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getChildren().get(0)
-                            .getToken();
-
-            if (token != null) {
-                String lex = token.getLexeme();
-                String type = token.getType();
-
-                // Literal
-                if (type.equals("INT_VALUE") || type.equals("FLOAT_VALUE") || type.equals("CHAR_VALUE")) {
-                    if (!literalToTemp.containsKey(lex)) {
-                        String tmp = newTemp();
-                        code.add(tmp + " = " + lex);
-                        literalToTemp.put(lex, tmp);
-                    }
-                    return literalToTemp.get(lex);
-                }
-
-                // Identificador (variable)
-                if (type.equals("ID")) {
-                    if (!varToTemp.containsKey(lex)) {
-                        String tmp = newTemp();
-                        varToTemp.put(lex, tmp);
-                    }
-                    return varToTemp.get(lex);
-                }
-            }
-        } catch (Exception e) {
-            // Fallback per seguretat
-            origen = node.getChildren().get(0).getChildren().get(0).getSymbol();
-            System.out.println("token: " + origen);
-        }
-
-        // Si no es pot identificar, fem servir l'última temp generada
-        return getLastTemp();
-
-        */
     }
 
     public void cleanCodeFile(String path) {

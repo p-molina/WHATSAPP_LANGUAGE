@@ -15,12 +15,12 @@ t2 = call fibonacci
 t9 = t0 - t7
 t0 = t9
 t3 = call fibonacci
-t10 = t1 + t3
+t10 = t2 + t3
 t1 = t10
 goto L1
 
 L0:
-t1 = t1
+t1 = t0
 
 L1:
 return t1
