@@ -2,6 +2,7 @@ import MIPS.MIPSGenerator;
 import TAC.TACGenerator;
 import Testing.TestExecute;
 import ParserAnalyzer.ParserAnalyzer;
+import ParserAnalyzer.ParserTableGenerator;
 import SemanticAnalyzer.SemanticAnalyzer;
 import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
@@ -32,7 +33,7 @@ public class Main {
             Dictionary dictionary = new Dictionary(dictionaryFilePath);
             Grammar grammar = new Grammar(grammarFilePath);
 
-            ParserTableBuilder builder = new ParserTableBuilder(dictionary, grammar);
+            ParserTableGenerator builder = new ParserTableGenerator(dictionary, grammar);
             builder.buildParsingTable();
 
             LexicalAnalyzer lexer = new LexicalAnalyzer(dictionary);

@@ -3,6 +3,7 @@ package Testing;
 import LexicalAnalyzer.LexicalAnalyzer;
 import MIPS.MIPSGenerator;
 import ParserAnalyzer.ParserAnalyzer;
+import ParserAnalyzer.ParserTableGenerator;
 import SemanticAnalyzer.SemanticAnalyzer;
 import TAC.TACGenerator;
 import entities.Node;
@@ -130,7 +131,7 @@ public class TestExecute {
     public static void main(String[] args) throws Exception {
         entities.Dictionary dict = new entities.Dictionary("resources/diccionari.json");
         entities.Grammar grammar = new entities.Grammar("resources/grammar.json");
-        entities.ParserTableBuilder builder = new entities.ParserTableBuilder(dict, grammar);
+        ParserTableGenerator builder = new ParserTableGenerator(dict, grammar);
         builder.buildParsingTable();
 
         LexicalAnalyzer lexer = new LexicalAnalyzer(dict);

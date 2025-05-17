@@ -1,14 +1,25 @@
 package ParserAnalyzer;
 
 import java.util.*;
-import entities.*;
 import entities.Dictionary;
+import entities.Grammar;
+import entities.ParserTable;
 
+/**
+ * Classe responsable de generar la taula de parsing LL(1) a partir
+ * d’un diccionari de tokens i una gramàtica.
+ */
 public class ParserTableGenerator {
     private Dictionary dictionary;
     private Grammar grammar;
     private Map<String, Map<String, List<String>>> parsingTable;
 
+    /**
+     * Crea una instància de ParserTableGenerator.
+     *
+     * @param dictionary Diccionari de tokens amb els terminals reconeguts.
+     * @param grammar    Gramàtica que defineix els no-terminis i les seves regles.
+     */
     public ParserTableGenerator(Dictionary dictionary, Grammar grammar) {
         this.dictionary = dictionary;
         this.grammar = grammar;
@@ -16,49 +27,41 @@ public class ParserTableGenerator {
     }
 
     /**
-     * Construye la tabla de parsing LL(1) e imprime FIRST, FOLLOW y la tabla.
+     * Genera la taula de parsing LL(1).
+     *
+     * Aquest mètode realitza els passos següents:
+     * <ol>
+     *   <li>Obtenir les regles de la gramàtica.</li>
+     *   <li>Calcular els conjunts FIRST i FOLLOW.</li>
+     *   <li>Inicialitzar i omplir la taula de parsing amb la classe ParserTable.</li>
+     *   <li>Emmagatzemar el resultat a l’atribut {@code parsingTable}.</li>
+     * </ol>
      */
     public void buildParsingTable() {
+        // Obtenir les regles de la gramàtica
         Map<String, List<List<String>>> grammarRules = grammar.getGrammarRules();
         FirstFollow calculator = new FirstFollow(grammarRules);
 
-        // 1. Calcular FIRST y FOLLOW
+        // Calcular FIRST y FOLLOW
         Map<String, Set<String>> firstSets = calculator.computeFirstSets();
         Map<String, Set<String>> followSets = calculator.computeFollowSets("<AXIOMA>");
 
-        // 2. Imprimir FIRST sets
-        System.out.println("=== FIRST sets ===");
-        List<String> nts = new ArrayList<>(firstSets.keySet());
-        Collections.sort(nts);
-        for (String nt : nts) {
-            List<String> elems = new ArrayList<>(firstSets.get(nt));
-            Collections.sort(elems);
-            System.out.println( nt + " : " + elems);
-        }
-
-        // 3. Imprimir FOLLOW sets
-        System.out.println("=== FOLLOW sets ===");
-        nts = new ArrayList<>(followSets.keySet());
-        Collections.sort(nts);
-        for (String nt : nts) {
-            List<String> elems = new ArrayList<>(followSets.get(nt));
-            Collections.sort(elems);
-            System.out.println(nt + " : " + elems);
-        }
-
-        // 4. Construir la tabla LL(1)
+        // Crear i omplir la taula de parsing
         ParserTable parserTable = new ParserTable(dictionary, grammarRules, firstSets, followSets);
         parserTable.initParsingTable();
         parserTable.fillParsingTable();
-        this.parsingTable = parserTable.getTable();
 
-        // 5. Imprimir Parsing Table
-        System.out.println("=== Parsing Table ===");
-        System.out.println(this.parsingTable);
+        // Desa la taula final
+        this.parsingTable = parserTable.getTable();
     }
 
     /**
-     * Devuelve la tabla de parsing LL(1) generada.
+     * Retorna la taula de parsing LL(1) construïda.
+     *
+     * @return
+     *   Un {@code Map} on cada clau és un no-terminal i cada valor és
+     *   un altre {@code Map} que associa cada terminal a la llista
+     *   de símbols de la producció corresponent.
      */
     public Map<String, Map<String, List<String>>> getParsingTable() {
         return parsingTable;

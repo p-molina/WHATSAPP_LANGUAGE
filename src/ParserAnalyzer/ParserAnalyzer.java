@@ -3,47 +3,71 @@ package ParserAnalyzer;
 import entities.Grammar;
 import entities.Node;
 import entities.Token;
-import entities.ParserTableBuilder;
 import LexicalAnalyzer.LexicalAnalyzer;
 
 import java.util.*;
 
+/**
+ * Classe encarregada de realitzar el parsing predictiu LL(1)
+ * sobre una seqüència de tokens obtinguda d’un analitzador lèxic.
+ *
+ * <p>Utilitza una pila de símbols i una pila de nodes per construir
+ * l’arbre sintàctic a partir d’una taula LL(1) prèviament generada.</p>
+ */
 public class ParserAnalyzer {
+    /** Marcador que indica el final de la llista de tokens. */
     private static final String END_MARKER = "$";
+    /** Símbol que representa ε (epsilon). */
     private static final String EPSILON    = "ε";
 
+    /** Gramàtica amb les regles de no-terminis i produccions. */
     private final Grammar grammar;
+    /** Taula LL(1): mapeja cada no-terminal i terminal a la producció corresponent. */
     private final Map<String, Map<String, List<String>>> table;
 
-    public ParserAnalyzer(Grammar grammar, ParserTableBuilder builder) {
+    /**
+     * Construeix un {@code ParserAnalyzer} amb la gramàtica i el builder de taula.
+     *
+     * @param grammar
+     *   Objecte {@link Grammar} que conté les regles de la gramàtica.
+     * @param builder
+     *   Instància de {@link ParserTableGenerator} amb la taula LL(1) ja construïda.
+     */
+    public ParserAnalyzer(Grammar grammar, ParserTableGenerator builder) {
         this.grammar = grammar;
         this.table   = builder.getParsingTable();
     }
 
     /**
-     * Arranca el parseo LL(1) con el lexer ya tokenizado.
-     * @return la raíz del árbol de parseo
+     * Realitza el parsing LL(1) de la seqüència de tokens proporcionada pel lexer.
+     *
+     * @param lexer
+     *   Instància de {@link LexicalAnalyzer} que conté els tokens a parsejar.
+     * @return
+     *   El {@link Node} arrel de l’arbre de parsing generat.
+     * @throws RuntimeException
+     *   Si es produeix un error sintàctic (token inesperat) o no es troba entrada a la taula.
      */
     public Node parse(LexicalAnalyzer lexer) {
-        // 1) Obtener lista de tokens + marcador de fin
+        // Llista de tokens + marcador de final
         List<Token> tokens = new ArrayList<>(lexer.getTokens());
         tokens.add(new Token(END_MARKER, END_MARKER, -1, -1));
 
-        // 2) Pilas: símbolos y nodos
+        // Piles per a símbols i nodes
         Deque<String> symbolStack = new ArrayDeque<>();
         Deque<Node>   nodeStack   = new ArrayDeque<>();
 
-        // 3) Inicializar: primero marcamos fin, luego axioma
+        // Inicialització: END_MARKER, després l'axioma
         symbolStack.push(END_MARKER);
         symbolStack.push("<AXIOMA>");
         Node root = new Node("<AXIOMA>");
         nodeStack.push(root);
 
         int index = 0;
-        // 4) Loop hasta encontrar END_MARKER
+        // Loop fins trobar END_MARKER
         while (!symbolStack.isEmpty()) {
             String topSym = symbolStack.pop();
-            // Si encontramos el marcador de fin, salimos
+            // Si trobem el marcador de final, sortim
             if (END_MARKER.equals(topSym)) {
                 break;
             }
@@ -51,37 +75,40 @@ public class ParserAnalyzer {
             Node cur = nodeStack.pop();
             Token look = tokens.get(index);
 
-            // 5) Si es ε, lo ignoramos
+            // Si es ε, l'ignorem
             if (EPSILON.equals(topSym)) {
                 continue;
             }
 
-            // 6) Si es terminal, hacemos match
+            // Si és terminal, comprobem coincidència
             if (isTerminal(topSym)) {
                 if (topSym.equals(look.getType())) {
                     cur.setToken(look);
                     index++;
                 } else {
                     throw new RuntimeException(
-                            String.format("Error sintáctico: esperaba %s pero llegó %s en línea %d,col %d",
+                            String.format("Error sintàctic: s’esperava %s però ha arribat %s en línia %d, columna %d",
                                     topSym, look.getType(), look.getLine(), look.getColumn())
                     );
                 }
 
             } else {
-                // 7) No terminal: consultar tabla
+                // No-terminal: buscar producció a la taula
                 Map<String, List<String>> row = table.get(topSym);
                 if (row == null) {
-                    throw new RuntimeException("No existe fila para no terminal " + topSym);
+                    throw new RuntimeException("No hi ha fila per al no-terminal " + topSym);
                 }
                 List<String> production = row.get(look.getType());
                 if (production == null) {
                     throw new RuntimeException(
-                            String.format(String.valueOf(GramaticalErrorType.GRAMATICAL_ERROR_TYPE), look.getLine(), look.getLexeme())
+                            String.format(String.valueOf(
+                                    GramaticalErrorType.GRAMATICAL_ERROR_TYPE),
+                                    look.getLine(), look.getLexeme()
+                            )
                     );
                 }
 
-                // 8) Crear nodos hijos y anexarlos
+                // Crear i enllaçar nodes fills
                 List<Node> children = new ArrayList<>();
                 for (String sym : production) {
                     Node child = new Node(sym);
@@ -89,7 +116,7 @@ public class ParserAnalyzer {
                     cur.addChild(child);
                 }
 
-                // 9) Apilar en orden inverso
+                // Apilar símbols i nodes en ordre invers
                 for (int i = production.size() - 1; i >= 0; i--) {
                     symbolStack.push(production.get(i));
                     nodeStack.push(children.get(i));
@@ -99,6 +126,17 @@ public class ParserAnalyzer {
         return root;
     }
 
+    /**
+     * Determina si un símbol és terminal.
+     *
+     * <p>Considera terminals tots els símbols que no siguin no-terminis de la gramàtica,
+     * així com ε i el marcador de final.</p>
+     *
+     * @param sym
+     *   Cadena que representa el símbol a avaluar.
+     * @return
+     *   {@code true} si és terminal o marcador, {@code false} si és no-terminal.
+     */
     private boolean isTerminal(String sym) {
         if (EPSILON.equals(sym) || END_MARKER.equals(sym)) return true;
         return !grammar.getGrammarRules().containsKey(sym);
