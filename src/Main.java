@@ -1,4 +1,4 @@
-import MIPS.MIPSGeneratorNEW;
+import MIPS.MIPSGenerator;
 import TAC.TACGenerator;
 import Testing.TestExecute;
 import ParserAnalyzer.ParserAnalyzer;
@@ -6,12 +6,10 @@ import SemanticAnalyzer.SemanticAnalyzer;
 import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
 
-import java.util.List;
-
 public class Main {
-    static String wspFilePath = "testing/testOriol.wsp";
-    static String tacFilePath = "outputFiles/tac/tac_testOriol.txt";
-    static String mipsFilePath = "outputFiles/mips/mips_testOriol.asm";
+    static String wspFilePath = "testing/fibonacci.wsp";
+    static String tacFilePath = "outputFiles/tac/tac_fibonacci.txt";
+    static String mipsFilePath = "outputFiles/mips/mips_fibonacci.asm";
     static String dicionaryFilePath = "resources/diccionari.json";
     static String grammarFilePath = "resources/grammar.json";
 
@@ -59,7 +57,7 @@ public class Main {
                 TACGenerator tac = new TACGenerator();
                 tac.generateFile(tree, tacFilePath);
 
-                MIPSGeneratorNEW mipsGen = new MIPSGeneratorNEW();
+                MIPSGenerator mipsGen = new MIPSGenerator();
                 mipsGen.generate(tacFilePath, mipsFilePath);
             }
 
@@ -70,13 +68,4 @@ public class Main {
         }
     }
 
-    private static void printTree(Node node, String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + node);
-        List<Node> children = node.getChildren();
-        for (int i = 0; i < children.size(); i++) {
-            printTree(children.get(i),
-                    prefix + (isTail ? "    " : "│   "),
-                    i == children.size() - 1);
-        }
-    }
 }

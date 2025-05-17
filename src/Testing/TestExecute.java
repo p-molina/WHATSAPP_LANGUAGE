@@ -1,9 +1,9 @@
 package Testing;
 
 import LexicalAnalyzer.LexicalAnalyzer;
+import MIPS.MIPSGenerator;
 import ParserAnalyzer.ParserAnalyzer;
 import SemanticAnalyzer.SemanticAnalyzer;
-import MIPS.MIPSGenerator;
 import TAC.TACGenerator;
 import entities.Node;
 import entities.SymbolTable;
@@ -105,7 +105,7 @@ public class TestExecute {
                 // Generar MIPS
                 String mipsPath = "outputFiles/mips/mips_test" + t.getId() + ".asm";
                 Files.createDirectories(Paths.get("outputFiles/mips"));
-                new MIPSGenerator(tacPath, mipsPath).generate();
+                new MIPSGenerator().generate(tacPath, mipsPath);
                 System.out.println("  [OK] MIPS generado en " + mipsPath + "\n");
 
             } catch (Exception e) {
