@@ -5,6 +5,7 @@ import entities.Token;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.util.*;
 
 public class TACGenerator {
@@ -32,6 +33,9 @@ public class TACGenerator {
         } catch (IOException e) {
             System.err.println("Error escrivint el TAC: " + e.getMessage());
         }
+
+
+        cleanCodeFile(filename);
     }
 
     private void start(Node node) {
@@ -46,7 +50,6 @@ public class TACGenerator {
                 currentId = first.getToken().getLexeme();
             }
         }
-
 
         switch (getNodeKind(node)) {
             case MAIN -> handleMain(node);
@@ -135,18 +138,18 @@ public class TACGenerator {
     }
 
     private void handleReturn(Node node) {
-        start(node.getChildren().get(1)); // <EXPRESSIO>
+        //start(node.getChildren().get(1)); // <EXPRESSIO>
 
-        // Busquem el primer token no nul dins de l'expressió
         Token token = findFirstToken(node.getChildren().get(1));
-        if (token == null) {
-            System.err.println("Error: no s'ha pogut trobar cap token dins del return.");
-            return;
-        }
 
-        String val = token.getLexeme();
-        String tmp = varToTemp.get(val);
-        code.add("return " + tmp);
+        if (Objects.equals(token.getType(), "ID")) {
+            //System.out.println("ID: " + token.getLexeme());
+            String lex = varToTemp.get(token.getLexeme());
+            code.add("return " + lex);
+        } else {
+            //System.out.println("Literal: " + token.getLexeme());
+            code.add("return " + token.getLexeme());
+        }
     }
 
     private Token findFirstToken(Node node) {
@@ -215,11 +218,13 @@ public class TACGenerator {
 
                 // Avaluar operand dret
                 start(rightNode);
-                String right = extractOperand(rightNode);
 
+                String right = extractOperand(rightNode);
                 String tmp = newTemp();
+
                 code.add(tmp + " = " + left + " " + map(op) + " " + right);
                 stack.push(tmp);
+                //System.out.println("Operació: " + left + " " + map(op) + " " + right);
 
                 // Si hi ha més operacions en cadena, continua
                 if (tail.getChildren().size() == 3) {
@@ -270,15 +275,24 @@ public class TACGenerator {
             Node expressio = suffix.getChildren().get(1);
 
             start(expressio);
-            String val = getLastTemp();
 
-            // Si el valor és un literal conegut, reutilitzem la temp
-            if (literalToTemp.containsValue(val) && !varToTemp.containsKey(id)) {
-                varToTemp.put(id, val);
-            } else {
+            String val =    expressio
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getChildren().get(0)
+                            .getToken().getLexeme();
+
+            if (!varToTemp.containsKey(val) && !literalToTemp.containsKey(val)) {
                 String tmp = newTemp();
                 varToTemp.put(id, tmp);
+                literalToTemp.put(val, tmp);
                 code.add(tmp + " = " + val);
+            } else {
+                String tmp = varToTemp.getOrDefault(val, literalToTemp.get(val));
+                varToTemp.put(id, tmp);
+                code.add(tmp + " = " + val);
+                //System.out.println("Declaració: " + id + " -> " + tmp);
             }
         }
     }
@@ -427,6 +441,35 @@ public class TACGenerator {
     }
 
     private String extractOperand(Node node) {
+        if (Objects.equals(node.getChildren().get(0).getSymbol(), "ID")) {
+            //System.out.println("1ID: " + node.getChildren().get(0).getToken().getLexeme());
+            String lex = node.getChildren().get(0).getToken().getLexeme();
+            if (varToTemp.containsKey(lex)) {
+                return varToTemp.get(lex);
+            } else return literalToTemp.getOrDefault(lex, lex);
+        } else if (Objects.equals(node.getChildren().get(0).getChildren().get(0).getSymbol(), "ID")) {
+            //System.out.println("2ID: " + node.getChildren().get(0).getChildren().get(0).getToken().getLexeme());
+            String lex = node.getChildren().get(0).getChildren().get(0).getToken().getLexeme();
+            if (varToTemp.containsKey(lex)) {
+                return varToTemp.get(lex);
+            } else return literalToTemp.getOrDefault(lex, lex);
+        } else if (Objects.equals(node.getChildren().get(0).getSymbol(), "<VALOR>")) {
+            //System.out.println("3ID: " + node.getChildren().get(0).getChildren().get(0).getToken().getLexeme());
+            String lex = node.getChildren().get(0).getChildren().get(0).getToken().getLexeme();
+            if (varToTemp.containsKey(lex)) {
+                return varToTemp.get(lex);
+            } else return literalToTemp.getOrDefault(lex, lex);
+        } else if (Objects.equals(node.getChildren().get(0).getSymbol(), "<FACTOR>")) {
+            //System.out.println("4ID: " + node.getChildren().get(0).getChildren().get(0).getChildren().get(0).getToken().getLexeme());
+            String lex = node.getChildren().get(0).getChildren().get(0).getChildren().get(0).getToken().getLexeme();
+            if (varToTemp.containsKey(lex)) {
+                return varToTemp.get(lex);
+            } else return literalToTemp.getOrDefault(lex, lex);
+        } else {
+            return "??";
+        }
+
+        /*
         try {
             Token token =   node
                             .getChildren().get(0)
@@ -459,11 +502,52 @@ public class TACGenerator {
             }
         } catch (Exception e) {
             // Fallback per seguretat
+            origen = node.getChildren().get(0).getChildren().get(0).getSymbol();
+            System.out.println("token: " + origen);
         }
 
         // Si no es pot identificar, fem servir l'última temp generada
         return getLastTemp();
+
+        */
     }
+
+    public void cleanCodeFile(String path) {
+        try {
+            List<String> lines = new ArrayList<>();
+            try (Scanner scanner = new Scanner(new java.io.File(path))) {
+                while (scanner.hasNextLine()) {
+                    lines.add(scanner.nextLine().trim());
+                }
+            }
+
+            List<String> cleaned = new ArrayList<>();
+            String last = "";
+
+            for (String line : lines) {
+                // Si és igual a la línia anterior, ignora-la
+                if (line.equals(last)) continue;
+
+                // Si són dues assignacions a la mateixa temp amb el mateix valor
+                if (line.matches("t\\d+ = .+")) {
+                    String[] parts = line.split(" = ");
+                }
+
+                cleaned.add(line);
+                last = line;
+            }
+
+            try (FileWriter writer = new FileWriter(path)) {
+                for (String line : cleaned) {
+                    writer.write(line + System.lineSeparator());
+                }
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error netejant el fitxer TAC: " + e.getMessage());
+        }
+    }
+
 
 
     private String getLastTemp() {

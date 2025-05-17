@@ -4,15 +4,29 @@ num var2 -> 1 xd
 num func1 jajaj
     num a -> 2 xd
     num b -> 3 xd
-    num c -> a + b xd
-    num d -> c + 4 xd
-    num e -> d + 5 xd
-    num f -> e + 6 xd
-    num g -> f + 7 xd
-    num h -> g + 8 xd
-    num j -> h + 10 xd
-    num k -> j + 11 xd
-    num l -> k + 12 xd
+    num c -> 4 xd
+    num d -> 5 xd
+    num e -> 6 xd
+    num f -> 7 xd
+    num g -> 8 xd
+    num h -> 9 xd
+    num j -> 10 xd
+    num k -> 11 xd
+    num l -> 12 xd
+
+    a -> a + b xd
+    b -> b + c xd
+    c -> c + d xd
+    d -> d + e xd
+    e -> e + f xd
+    f -> f + g xd
+    g -> g + h xd
+    h -> h + j xd
+    j -> j + k xd
+    k -> k + l xd
+    l -> l + a xd
+
+
     xinpum 1 xd
 jejej
 
