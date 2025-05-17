@@ -9,6 +9,10 @@ L0:
   li $t3, 1
   add $t4, $s0, $t3
   move $s0, $t4
+L1:
+  move $v0, $s0
+  jr $ra
+xat:
   # Save context before calling func1
   addiu $sp, $sp, -68
   sw $t0, 0($sp)
@@ -50,9 +54,5 @@ L0:
   lw $a0, 64($sp)
   addiu $sp, $sp, 68
   move $s1, $v0
-L1:
-  li $v0, 1
-  jr $ra
-xat:
   move $v0, $s0
   jr $ra

@@ -11,10 +11,10 @@ L0:
 t4 = 1
 t5 = t0 + t4
 t0 = t5
-t1 = call func1
 
 L1:
-return 1
+return t0
 
 xat:
+t1 = call func1
 return t0
