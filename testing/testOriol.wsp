@@ -3,13 +3,16 @@ num var2 -> 1 xd
 
 num func1 jajaj
 
-    bro ¿ var1 < 5 ? jajaj
+    tombarella ¿ var1 < 5 ? jajaj
         var1 -> var1 + 1 xd
+        var2 -> var2 + 5 xd
     jejej
-    xinpum var1 xd
+
+    xinpum 69 xd
 jejej
 
 num xat jajaj
-    var2 -> func1 xd
-    xinpum var1 xd
+    num var3 -> 0 xd
+    var3 -> func1 xd
+    xinpum 0 xd
 jejej

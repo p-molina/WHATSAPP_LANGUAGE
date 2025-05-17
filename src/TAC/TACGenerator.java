@@ -5,7 +5,6 @@ import entities.Token;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.util.*;
 
 public class TACGenerator {
@@ -97,6 +96,7 @@ public class TACGenerator {
 
     private void handleWhile(Node node) {
         String Lstart = newLabel();
+        String Lbucle = newLabel();
         String Lend = newLabel();
 
         code.add(Lstart + ":");
@@ -104,13 +104,15 @@ public class TACGenerator {
         Node condNode = node.getChildren().get(2); // <CONDICIO>
         String condTmp = handleCondition(condNode);
 
-        code.add("if " + condTmp + " goto " + Lend);
+        code.add("if " + condTmp + " goto " + Lbucle);
+        code.add("goto " + Lend);
 
+        code.add("\n" + Lbucle + ":");
         Node bodyNode = node.getChildren().get(5); // <BODY>
         start(bodyNode);
 
         code.add("goto " + Lstart);
-        code.add(Lend + ":");
+        code.add("\n" + Lend + ":");
     }
 
     private void handleIf(Node node) {
@@ -427,6 +429,7 @@ public class TACGenerator {
 
         if (node.getSymbol().equals("<CONTENT>") && !node.getChildren().isEmpty()) {
             Token first = node.getChildren().get(0).getToken();
+
             if (first != null) {
                 return switch (first.getType()) {
                     case "IF" -> NodeKind.IF;

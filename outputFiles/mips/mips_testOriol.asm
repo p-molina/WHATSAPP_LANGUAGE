@@ -1,18 +1,23 @@
   li $s0, 0
   li $s1, 1
 func1:
+L0:
   li $t0, 5
   slt $t1, $s0, $t0
-  bne $t1, $zero, L0
-  j L1
-L0:
+  bne $t1, $zero, L1
+  j L2
+L1:
   li $t3, 1
   add $t4, $s0, $t3
   move $s0, $t4
-L1:
-  move $v0, $s0
+  add $t5, $s1, $t0
+  move $s1, $t5
+  j L0
+L2:
+  li $v0, 69
   jr $ra
 xat:
+  li $t7, 0
   # Save context before calling func1
   addiu $sp, $sp, -68
   sw $t0, 0($sp)
@@ -53,6 +58,6 @@ xat:
   lw $ra, 60($sp)
   lw $a0, 64($sp)
   addiu $sp, $sp, 68
-  move $s1, $v0
-  move $v0, $s0
+  move $t7, $v0
+  li $v0, 0
   jr $ra
