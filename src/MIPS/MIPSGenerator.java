@@ -8,19 +8,33 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * Generador de codi MIPS a partir de TAC (Three-Address Code).
+ * <p>Aquesta classe llegeix un fitxer TAC, converteix cada línia
+ * al corresponent codi MIPS i escriu el resultat en un fitxer de sortida.</p>
+ * <p>Gestiona assignacions, salts, etiquetes, trucades a funcions i retorns,
+ * així com l'assignació de registres temporals i de punt flotant.</p>
+ */
 public class MIPSGenerator {
 
+    /** Mapatge de variables a registres enters ($s0–$s7). */
     private Map<String, String> varRegisterMap;
+    /** Comptador per registres enters ($t0, $t1, ...) */
     private int registerCounter;
+    /** Comptador per registres de coma flotant ($f0, $f1, ...) */
     private int floatRegisterCounter;
+    /** Mapa per assignar registres a variables */
     private Map<String, String> floatLabels;
+    /** Escrivent per al fitxer de sortida MIPS. */
     private FileWriter writer;
-
+    /** Conjunt de variables globals (definides fora de funcions). */
     private final Set<String> globalVars = new HashSet<>();
-
+    /** Mapatge de registres assignats per l'allocator intel·ligent. */
     private Map<String, String> assignedRegs;
 
-
+    /**
+     * Construeix un nou generador MIPS inicialitzant mapes i comptadors.
+     */
     public MIPSGenerator() {
         varRegisterMap = new HashMap<>();
         floatLabels = new HashMap<>();
@@ -28,11 +42,16 @@ public class MIPSGenerator {
         floatRegisterCounter = 0;
     }
 
+    /**
+     * Genera el codi MIPS a partir d'un fitxer TAC.
+     *
+     * @param tacFilePath  Ruta al fitxer d'entrada TAC.
+     * @param mipsFilePath Ruta al fitxer de sortida MIPS.
+     */
     public void generate(String tacFilePath, String mipsFilePath) {
         try {
+            // Llegir tot el TAC per detectar variables globals (aquelles abans de la primera etiqueta)
             List<String> tacLines = Files.readAllLines(Paths.get(tacFilePath));
-
-            // Detectar variables globals
             boolean insideFunction = false;
             for (String line : tacLines) {
                 line = line.trim();
@@ -56,13 +75,16 @@ public class MIPSGenerator {
                 if (insideFunction) filteredTacLines.add(line);
             }
 
+            // Assignar registres temporals
             SmartRegisterAllocator allocator = new SmartRegisterAllocator();
             this.assignedRegs = allocator.allocate(filteredTacLines);
 
+            // Obrir lector i escriptor de fitxers
             BufferedReader br = new BufferedReader(new FileReader(tacFilePath));
             FileWriter w = new FileWriter(mipsFilePath);
             this.writer = w;
 
+            // Processar cada línia TAC i convertir-la a MIPS
             String line;
             while ((line = br.readLine()) != null) {
                 convertTacToMips(line.trim());
@@ -74,6 +96,11 @@ public class MIPSGenerator {
         }
     }
 
+    /**
+     * Converteix una única línia TAC al corresponent codi MIPS.
+     *
+     * @param line Línia de TAC a processar.
+     */
     private void convertTacToMips(String line) {
         if (line.isEmpty()) return;
 
@@ -85,23 +112,32 @@ public class MIPSGenerator {
             handleGoto(line);
         } else if (line.startsWith("return ")) {    // RETURN VALUE
             handleReturn(line);
-        } else if (line.contains("call")) {            // ASSIGNATION
+        } else if (line.contains("call")) {         // ASSIGNATION
             handleCall(line);
         } else if (line.contains("=")) {
             handleAssignment(line);
-            // potser aqui controlar el call de la funcio en una assignacio, no se
         }
     }
 
+    /**
+     * Gestiona la conversió d'una etiqueta TAC a etiqueta MIPS.
+     *
+     * @param line Línia TAC que conté l'etiqueta (acaba en ':').
+     */
     private void handleLabel(String line) {
         String label = line.substring(0, line.length());
         try {
-            writer.write(label + "\n");  // només l’etiqueta
+            writer.write(label + "\n");
         } catch (IOException e) {
             System.err.println("Error writing label: " + e.getMessage());
         }
     }
 
+    /**
+     * Gestiona la trucada a funcions TAC i genera codi MIPS corresponent.
+     *
+     * @param line Línia TAC que comença amb 'call ' seguits del nom de la funció.
+     */
     private void handleCall(String line) {
         try {
             String[] parts = line.split("=");
@@ -121,48 +157,48 @@ public class MIPSGenerator {
             // $t0–$t9 (10), $s0–$s4 (5), $ra (1), $a0 (1) → 17 registres * 4 bytes = 68
             int totalBytes = 17 * 4;
 
-            // 1. Reservar espai
+            // Reservar espai
             writer.write("  addiu $sp, $sp, -" + totalBytes + "\n");
 
-            // 2. Guardar $t0–$t9
+            // Guardar $t0–$t9
             for (int i = 0; i <= 9; i++) {
                 writer.write("  sw $t" + i + ", " + (i * 4) + "($sp)\n");
             }
 
-            // 3. Guardar $s0–$s4
+            // Guardar $s0–$s4
             for (int i = 0; i <= 4; i++) {
                 writer.write("  sw $s" + i + ", " + ((10 + i) * 4) + "($sp)\n");
             }
 
-            // 4. Guardar $ra i $a0
+            // Guardar $ra i $a0
             writer.write("  sw $ra, " + (15 * 4) + "($sp)\n");
             writer.write("  sw $a0, " + (16 * 4) + "($sp)\n");
 
-            // 5. Crida
+            // Crida
             writer.write("  # Call function\n");
             writer.write("  jal " + functionName + "\n");
 
-            // 6. Restaurar context
+            // Restaurar context
             writer.write("  # Restore context after call\n");
 
-            // 7. Recuperar $t0–$t9
+            // Recuperar $t0–$t9
             for (int i = 0; i <= 9; i++) {
                 writer.write("  lw $t" + i + ", " + (i * 4) + "($sp)\n");
             }
 
-            // 8. Recuperar $s0–$s4
+            // Recuperar $s0–$s4
             for (int i = 0; i <= 4; i++) {
                 writer.write("  lw $s" + i + ", " + ((10 + i) * 4) + "($sp)\n");
             }
 
-            // 9. Recuperar $ra i $a0
+            // Recuperar $ra i $a0
             writer.write("  lw $ra, " + (15 * 4) + "($sp)\n");
             writer.write("  lw $a0, " + (16 * 4) + "($sp)\n");
 
-            // 10. Alliberar espai
+            // Alliberar espai
             writer.write("  addiu $sp, $sp, " + totalBytes + "\n");
 
-            // 11. Assignació de retorn (si escau)
+            // Assignació de retorn (si escau)
             if (resultVar != null) {
                 String destReg = getRegister(resultVar);
                 writer.write("  move " + destReg + ", $v0\n");
@@ -173,8 +209,9 @@ public class MIPSGenerator {
         }
     }
 
-
-
+    /**
+     * Gestiona la instrucció return TAC i escriu el codi MIPS corresponent.
+     */
     private void handleReturn(String line) {
         try {
             String[] parts = line.split(" ");
@@ -194,35 +231,44 @@ public class MIPSGenerator {
                     }
                 }
             } else {
-                // return null o sense valor explícit
+                // Return null o sense valor explícit
                 writer.write("  li $v0, 0\n");
             }
-
             writer.write("  jr $ra\n");
-
         } catch (IOException e) {
             System.err.println("Error writing return: " + e.getMessage());
         }
     }
 
-
-
+    /**
+     * Gestiona salts incondicionals TAC i converteix-los a MIPS.
+     *
+     * @param line Línia TAC que comença amb 'goto '.
+     */
     private void handleGoto(String line) {
         try {
-            // Ex: "goto etiqueta"
-            String label = line.substring(5).trim();  // treu "goto "
+            String label = line.substring(5).trim();
             writer.write("  j " + label + "\n");
         } catch (IOException e) {
             System.err.println("Error writing goto: " + e.getMessage());
         }
     }
 
-
+    /**
+     * Comprova si un registre és de punt flotant.
+     *
+     * @param reg Nom del registre.
+     * @return true si és un registre de punt flotant, false altrament.
+     */
     private boolean isFloatRegister(String reg) {
         return reg.startsWith("$f");
     }
 
-
+    /**
+     * Gestiona salts condicionals TAC i genera codi MIPS equivalent.
+     *
+     * @param line Línia TAC que conté 'if'.
+     */
     private void handleConditionalJump(String line) {
         try {
             String[] parts = line.replace("if", "").trim().split("goto");
@@ -235,6 +281,11 @@ public class MIPSGenerator {
         }
     }
 
+    /**
+     * Gestiona assignacions TAC i genera les instruccions MIPS corresponents.
+     *
+     * @param line Línia TAC amb un '='.
+     */
     private void handleAssignment(String line) {
         try {
             String[] parts = line.split("=");
@@ -318,8 +369,12 @@ public class MIPSGenerator {
         }
     }
 
-
-
+    /**
+     * Obté o assigna un registre temporal per a una variable TAC.
+     *
+     * @param var Nom de variable TAC.
+     * @return Nom del registre MIPS assignat.
+     */
     private String getRegister(String var) {
         if (globalVars.contains(var)) {
             if (!varRegisterMap.containsKey(var)) {
@@ -329,11 +384,15 @@ public class MIPSGenerator {
             }
             return varRegisterMap.get(var);
         }
-
         return assignedRegs.getOrDefault(var, "$zero");
     }
 
-
+    /**
+     * Obté o assigna un registre de punt flotant per a una variable TAC.
+     *
+     * @param var Nom de variable TAC.
+     * @return Registre flotant assignat.
+     */
     private String getFloatRegister(String var) {
         if (!floatLabels.containsKey(var)) {
             String freg = "$f" + (floatRegisterCounter % 10);
@@ -343,16 +402,32 @@ public class MIPSGenerator {
         return floatLabels.get(var);
     }
 
-
-
+    /**
+     * Comprova si una cadena representa un enter.
+     *
+     * @param s Cadena a comprovar.
+     * @return true si la cadena és un enter, false altrament.
+     */
     private boolean isInteger(String s) {
         return s.matches("-?\\d+");
     }
 
+    /**
+     * Comprova si una cadena representa un nombre de punt flotant.
+     *
+     * @param s Cadena a comprovar.
+     * @return true si és un flotant, false altrament.
+     */
     private boolean isFloat(String s) {
         return s.matches("-?\\d+\\.\\d+");
     }
 
+    /**
+     * Comprova si una cadena representa un caràcter ASCII com a enter.
+     *
+     * @param s Cadena a comprovar.
+     * @return true si s'ajusta al patró de caràcter, false altrament.
+     */
     private boolean isChar(String s) {
         return s.matches("-?\\d+");
     }
