@@ -130,8 +130,8 @@ public class TestExecute {
                 System.out.println("  [OK] TAC generated at " + tacPath);
 
                 // Generació de codi MIPS
-                String mipsPath = "tests/production/mips/" + test.getId() + ".asm";
-                Files.createDirectories(Paths.get("tests/production/mips/"));
+                String mipsPath = "resources/tests/production/mips/" + test.getId() + ".asm";
+                Files.createDirectories(Paths.get("resources/tests/production/mips/"));
                 new MIPSGenerator().generate(tacPath, mipsPath);
                 System.out.println("  [OK] MIPS generated at " + mipsPath + "\n");
 
