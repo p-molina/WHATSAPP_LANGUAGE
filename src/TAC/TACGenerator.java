@@ -11,28 +11,58 @@ import java.util.*;
 
 
 /**
- * TACGenerator is responsible for generating Three-Address Code (TAC)
- * from the abstract syntax tree (AST) of a program using a symbol table.
+ * Generador de codi TAC (Three-Address Code) a partir de l'arbre sintàctic (AST) d'un programa.
+ * Utilitza la taula de símbols per resoldre noms, tipus i generar codi intermediar.
+ *
+ * Aquesta classe recorre l'AST de manera recursiva, identificant blocs de control,
+ * declaracions, assignacions, operacions i comparacions per construir instruccions TAC.
  */
 public class TACGenerator {
-    private final List<String> code = new ArrayList<>();                // TAC code
-    private final Deque<String> stack = new ArrayDeque<>();             // Stack for temporary variables
-    private final Map<String, String> literalToTemp = new HashMap<>();  // Map for literals to temporary variables
-    private final Map<String, String> varToTemp = new HashMap<>();      // Map for variables to temporary variables
-    private int labelCounter = 0;                                       // Label counter
-    private int tempCounter = 0;                                        // Temporary variable counter
-    private String currentId = null;                                    // Current ID for assignment
-    private SymbolTable symbolTable;                                    // Symbol table
-    private final Set<String> functions = new HashSet<>();              // Set of function names
+    /**
+     * Llista d'instruccions TAC
+     */
+    private final List<String> code = new ArrayList<>();
+    /**
+     * Pila per a temporals intermedis
+     */
+    private final Deque<String> stack = new ArrayDeque<>();
+    /**
+     * Map de literals a temporals (reutilització)
+     */
+    private final Map<String, String> literalToTemp = new HashMap<>();
+    /**
+     * Map de variables a temporals TAC
+     */
+    private final Map<String, String> varToTemp = new HashMap<>();
+    /**
+     * Comptador per a etiquetes
+     */
+    private int labelCounter = 0;
+    /**
+     * Comptador per a variables temporals
+     */
+    private int tempCounter = 0;
+    /**
+     * Identificador actual en assignacions
+     */
+    private String currentId = null;
+    /**
+     * Taula de símbols
+     */
+    private SymbolTable symbolTable;
+    /**
+     * Conjunt de noms de funcions
+     */
+    private final Set<String> functions = new HashSet<>();
 
     public TACGenerator() {}
 
     /**
-     * Generates TAC code for the given AST and writes it to a file.
+     * Genera codi TAC per a l'AST especificat i l'escriu en un fitxer.
      *
-     * @param root        the root node of the AST
-     * @param symbolTable the symbol table for variables
-     * @param filename    the file where the TAC will be written
+     * @param root        Node arrel de l'AST
+     * @param symbolTable Taula de símbols amb variables i funcions
+     * @param filename    Ruta del fitxer de sortida per al codi TAC
      */
     public void generateFile(Node root, SymbolTable symbolTable, String filename) {
         this.symbolTable = symbolTable;
@@ -46,17 +76,20 @@ public class TACGenerator {
                 writer.write(line + System.lineSeparator());
             }
         } catch (IOException e) {
-            System.err.println("Error writing TAC: " + e.getMessage());
+            System.err.println("Error escrivint codi TAC: " + e.getMessage());
         }
     }
 
     /**
-     * Dispatches processing to the appropriate handler based on node type.
+     * Inicia el processament d'un node de l'AST, despatxant
+     * al handler corresponent segons el tipus de node.
+     *
+     * @param node Node a processar
      */
     private void start(Node node) {
         if (node == null) return;
 
-        // Assignation detection
+        // Detecció d'assignació en <CONTENT>
         if (node.getSymbol().equals("<CONTENT>") && node.getChildren().size() >= 2) {
             Node first = node.getChildren().get(0);
             Node second = node.getChildren().get(1);
@@ -84,7 +117,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles the main function node.
+     * Gestiona la funció main, afegint etiqueta i processant el cos.
+     *
+     * @param node Node <UNIT> corresponent al main
      */
     private void handleMain(Node node) {
         Node unitTail = node.getChildren().get(1);
@@ -94,7 +129,10 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a function declaration.
+     * Gestiona la definició d'una funció (no main), afegint etiqueta,
+     * emmagatzemant el nom i processant el cos.
+     *
+     * @param node Node <UNIT> de funció
      */
     private void handleFunction(Node node) {
         Node unitTail = node.getChildren().get(1);
@@ -105,7 +143,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a variable assignment, including function call assignments.
+     * Gestiona una assignació de variable o crida a funció amb assignació.
+     *
+     * @param node Node <ID_CONTENT>
      */
     private void handleAssignation(Node node) {
         Node expr = node.getChildren().get(1);
@@ -131,7 +171,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles arithmetic operations.
+     * Gestiona operacions aritmètiques binàries (+, -, *, /).
+     *
+     * @param node Node <EXPRESSIO> o <TERME>
      */
     private void handleOperation(Node node) {
         if (node.getChildren().isEmpty()) return;
@@ -165,7 +207,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles comparison expressions.
+     * Gestiona expressions de comparació (<, >, <=, >=, ==, !=).
+     *
+     * @param node Node <COMPARACIO>
      */
     private void handleComparation(Node node) {
         if (node.getChildren().size() == 2) {
@@ -195,7 +239,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a return statement.
+     * Gestiona l'instrucció return amb possible expressió.
+     *
+     * @param node Node <XINPUM>
      */
     private void handleReturn(Node node) {
         Token token = findFirstToken(node.getChildren().get(1));
@@ -210,7 +256,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a local variable declaration.
+     * Gestiona la declaració local de variables amb possible assignació.
+     *
+     * @param node Node <CONTENT> amb <DECLARACIO>
      */
     private void handleDeclaration(Node node) {
         String id = node.getChildren().get(1).getToken().getLexeme();
@@ -230,7 +278,9 @@ public class TACGenerator {
 
 
     /**
-     * Handles a global variable declaration.
+     * Gestiona la declaració global de variables amb assignació inicial.
+     *
+     * @param node Node <UNIT> amb declaració global
      */
     private void handleGlobalDeclaration(Node node) {
         Node unitTail = node.getChildren().get(1);
@@ -248,7 +298,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a while loop.
+     * Gestiona un bucle while, generant etiquetes i salts.
+     *
+     * @param node Node <CONTENT> amb <BUCLE>
      */
     private void handleWhile(Node node) {
         String Lstart = newLabel(), Lbody = newLabel(), Lend = newLabel();
@@ -265,7 +317,9 @@ public class TACGenerator {
     }
 
     /**
-     * Handles an if/else conditional.
+     * Gestiona una condicional if/else, generant etiquetes i salts segons condició.
+     *
+     * @param node Node <CONTENT> amb <IF>
      */
     private void handleIf(Node node) {
         String Lthen = newLabel(), Lend = newLabel();
@@ -274,10 +328,10 @@ public class TACGenerator {
 
         boolean hasElse = node.getChildren().size() == 8;
         if (hasElse) {
-            start(node.getChildren().get(7)); // ELSE
+            start(node.getChildren().get(7));   // ELSE
             code.add("goto " + Lend);
             code.add("\n" + Lthen + ":");
-            start(node.getChildren().get(5)); // THEN
+            start(node.getChildren().get(5));   // THEN
         } else {
             code.add("goto " + Lend);
             code.add("\n" + Lthen + ":");
@@ -288,7 +342,10 @@ public class TACGenerator {
     }
 
     /**
-     * Recursively processes unknown or generic nodes.
+     * Processa nodes genèrics o desconeguts recursivament,
+     * gestionant literals i identificadors.
+     *
+     * @param node Node a processar
      */
     private void handleOthers(Node node) {
         for (Node child : node.getChildren()) {
@@ -317,8 +374,11 @@ public class TACGenerator {
     }
 
     /**
-     * Returns the temporary variable assigned to a variable,
-     * creating one if it doesn't exist.
+     * Obté o crea un temporal TAC per a una variable,
+     * llançant excepció si no està declarada.
+     *
+     * @param id Nom de la variable
+     * @return Nom del temporal TAC assignat
      */
     private String getOrCreateTempForVariable(String id) {
         if (!varToTemp.containsKey(id)) {
@@ -334,7 +394,10 @@ public class TACGenerator {
     }
 
     /**
-     * Handles a condition by processing its comparison node.
+     * Gestiona la condició retornant el temporal resultant de la comparació.
+     *
+     * @param node Node <COMPARACIO>
+     * @return Temporal TAC amb el valor de la condició
      */
     private String handleCondition(Node node) {
         start(node.getChildren().get(0)); // comparation
@@ -342,7 +405,10 @@ public class TACGenerator {
     }
 
     /**
-     * Returns the first token found in a subtree.
+     * Troba el primer token en un subarbre (in-order).
+     *
+     * @param node Node arrel del subarbre
+     * @return Token trobat o null si no existeix
      */
     private Token findFirstToken(Node node) {
         if (node == null) return null;
@@ -355,7 +421,10 @@ public class TACGenerator {
     }
 
     /**
-     * Detects the kind of the given node.
+     * Detecta el tipus de node (NodeKind) segons la seva estructura.
+     *
+     * @param node Node de l'AST
+     * @return NodeKind corresponent
      */
     private NodeKind getNodeKind(Node node) {
         List<Node> children = node.getChildren();
@@ -440,19 +509,39 @@ public class TACGenerator {
     }
 
 
-    // --- Utilities ---
+    /**
+     * Genera una nova etiqueta única (L0, L1, ...).
+     *
+     * @return Nom de l'etiqueta generada
+     */
     private String newLabel() {
         return "L" + labelCounter++;
     }
 
+    /**
+     * Genera un nou temporal TAC únic (t0, t1, ...).
+     *
+     * @return Nom del temporal generat
+     */
     private String newTemp() {
         return "t" + tempCounter++;
     }
 
+    /**
+     * Retorna l'últim temporal generat (top de pila).
+     *
+     * @return Nom del temporal de la part superior de la pila, o "??" si la pila està buida
+     */
     private String getLastTemp() {
         return stack.isEmpty() ? "??" : stack.pop();
     }
 
+    /**
+     * Extreu l'operant d'un node, retornant un temporal o literal.
+     *
+     * @param node Node del qual extraure l'operant
+     * @return String amb el nom del temporal o la representació literal
+     */
     private String extractOperand(Node node) {
         Token token = findFirstToken(node);
         if (token == null) return "??";
@@ -464,6 +553,12 @@ public class TACGenerator {
         return literalToTemp.getOrDefault(lex, lex);
     }
 
+    /**
+     * Mapeja el tipus de token d'operador a símbol infix (+, -, *, /, <, >, ==, !=, <=, >=).
+     *
+     * @param type Tipus de token de l'operador
+     * @return Caràcter o cadena corresponent a l'operador infix
+     */
     private String mapOperator(String type) {
         return switch (type) {
             case "SUM" -> "+";
@@ -480,8 +575,12 @@ public class TACGenerator {
         };
     }
 
+    /**
+     * Enumeració interna dels tipus de node suportats pel generador TAC.
+     */
     private enum NodeKind {
-        MAIN, FUNCTION, WHILE, IF, RETURN, ASSIGNATION, OPERATION, COMPARATION,
+        MAIN, FUNCTION, WHILE, IF, RETURN,
+        ASSIGNATION, OPERATION, COMPARATION,
         DECLARATION, GLOBAL_DECLARATION, OTHER
     }
 }
