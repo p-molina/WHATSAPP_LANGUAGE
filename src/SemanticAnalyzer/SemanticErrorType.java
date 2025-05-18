@@ -148,12 +148,6 @@ public enum SemanticErrorType {
         return String.format(message, args);
     }
 
-    /**
-     * Retorna el text base del missatge d'error (sense formatar).
-     *
-     * @return
-     *   Patró de missatge amb placeholders.
-     */
     @Override
     public String toString() {
         return message;

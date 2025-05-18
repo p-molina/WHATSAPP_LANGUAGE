@@ -127,7 +127,7 @@ public class SemanticAnalyzer {
         String name    = idNode.getToken().getLexeme();
         String type    = getTypeFromTipus(tipusNode);
 
-        // Comprovar redeclaració
+        // Comprovar re-declaració
         if (getSymbol(name) != null) {
             error(node, SemanticErrorType.VARIABLE_REDECLARED, name);
         }
@@ -477,7 +477,7 @@ public class SemanticAnalyzer {
         String name = idNode.getToken().getLexeme();
         String type = getTypeFromTipus(tipusNode);
 
-        // Comprovar redeclaració
+        // Comprovar re-declaració
         if (symbolTable.getScopeSymbols(currentScope()).containsKey(name)) {
             error(idNode, SemanticErrorType.VARIABLE_REDECLARED, name);
         }
@@ -533,7 +533,7 @@ public class SemanticAnalyzer {
                 }
             }
             else {
-                // En cualquier otro caso (literal, expresión compuesta…), seguimos usando getExpressionType
+                // En qualsevol altre cas (literal, expressió composta…), seguim utilitzant getExpressionType
                 String retType = getExpressionType(expr);
                 if (!retType.equals(currentFunctionReturnType)) {
                     error(node, SemanticErrorType.RETURN_TYPE_MISMATCH, currentFunctionReturnType, retType);

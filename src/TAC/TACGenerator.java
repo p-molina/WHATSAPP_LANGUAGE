@@ -400,7 +400,7 @@ public class TACGenerator {
      * @return Temporal TAC amb el valor de la condició
      */
     private String handleCondition(Node node) {
-        start(node.getChildren().get(0)); // comparation
+        start(node.getChildren().get(0));
         return getLastTemp();
     }
 

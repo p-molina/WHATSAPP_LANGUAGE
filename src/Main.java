@@ -1,33 +1,58 @@
-import MIPS.MIPSGenerator;
-import TAC.TACGenerator;
-import Testing.TestExecute;
-import ParserAnalyzer.ParserAnalyzer;
-import ParserAnalyzer.ParserTableGenerator;
-import SemanticAnalyzer.SemanticAnalyzer;
 import entities.*;
 import LexicalAnalyzer.LexicalAnalyzer;
+import ParserAnalyzer.ParserTableGenerator;
+import ParserAnalyzer.ParserAnalyzer;
+import SemanticAnalyzer.SemanticAnalyzer;
+import TAC.TACGenerator;
+import MIPS.MIPSGenerator;
+import Testing.TestExecute;
 
 import java.io.IOException;
 import java.util.Scanner;
 
-
+/**
+ * Punt d'entrada de l'aplicació per al procés de compilació.
+ * Gestiona opcions de test, lectura de fitxers, anàlisi lèxic, sintàctic,
+ * semàntic, generació de TAC i MIPS, i mostra informació a l'usuari.
+ */
 public class Main {
+    /** Codi ANSI per reset d'estil de consola */
     public static final String ANSI_RESET  = "\u001B[0m";
+    /** Codi ANSI per text negre */
     public static final String ANSI_BLACK  = "\u001B[30m";
+    /** Codi ANSI per text vermell */
     public static final String ANSI_RED    = "\u001B[31m";
+    /** Codi ANSI per text verd */
     public static final String ANSI_GREEN  = "\u001B[32m";
+    /** Codi ANSI per text groc */
     public static final String ANSI_YELLOW = "\u001B[33m";
+    /** Codi ANSI per text blau */
     public static final String ANSI_BLUE   = "\u001B[34m";
+    /** Codi ANSI per text lila */
     public static final String ANSI_PURPLE = "\u001B[35m";
+    /** Codi ANSI per text cian */
     public static final String ANSI_CYAN   = "\u001B[36m";
+    /** Codi ANSI per text blanc */
     public static final String ANSI_WHITE  = "\u001B[37m";
 
+    /** Ruta del fitxer .wsp d'entrada */
     static String wspFilePath;
+    /** Ruta del fitxer .tac de sortida */
     static String tacFilePath;
+    /** Ruta del fitxer .asm MIPS de sortida */
     static String mipsFilePath;
+    /** Ruta del fitxer JSON amb el diccionari de paraules */
     static final String dictionaryFilePath = "resources/diccionari.json";
+    /** Ruta del fitxer JSON amb la gramàtica */
     static final String grammarFilePath = "resources/grammar.json";
 
+    /**
+     * Mètode principal: construeix components i inicia el procés.
+     * Pot executar tests si es passa l'argument "-test", o bé
+     * demanar rutes i compilar el fitxer especificat.
+     *
+     * @param args Arguments d'entrada; si conté "-test", s'executen proves.
+     */
     public static void main(String[] args) {
         try {
             Dictionary dictionary = new Dictionary(dictionaryFilePath);
@@ -52,6 +77,10 @@ public class Main {
         }
     }
 
+    /**
+     * Demana a l'usuari el nom del fitxer .wsp i estableix les rutes
+     * per als fitxers .wsp, .tac i .asm corresponents.
+     */
     private static void askForInputPaths() {
         Scanner scanner = new Scanner(System.in);
 
@@ -65,6 +94,13 @@ public class Main {
         mipsFilePath = "resources/files/mips/" + name + ".asm";
     }
 
+    /**
+     * Executa tots els tests disponibles amb el lexer i parser proporcionats.
+     *
+     * @param lexer  Instància de l'analitzador lèxic a utilitzar en tests.
+     * @param parser Instància del parser a utilitzar en tests.
+     * @throws IOException Si hi ha un problema durant l'execució dels tests.
+     */
     private static void runTests(LexicalAnalyzer lexer, ParserAnalyzer parser) throws IOException {
         System.out.println("Running tests...");
         TestExecute tests = new TestExecute(lexer, parser);
@@ -110,6 +146,9 @@ public class Main {
 
     }
 
+    /**
+     * Mostra un banner ASCII de benvinguda amb estil en color verd.
+     */
     public static void printBanner() {
         System.out.println(ANSI_GREEN +"""
      _    _ _           _                           _____                       _ _          \s

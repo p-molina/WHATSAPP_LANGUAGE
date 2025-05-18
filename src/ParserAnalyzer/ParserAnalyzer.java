@@ -19,7 +19,6 @@ public class ParserAnalyzer {
     private static final String END_MARKER = "$";
     /** Símbol que representa ε (epsilon). */
     private static final String EPSILON    = "ε";
-
     /** Gramàtica amb les regles de no-terminis i produccions. */
     private final Grammar grammar;
     /** Taula LL(1): mapeja cada no-terminal i terminal a la producció corresponent. */
@@ -80,7 +79,7 @@ public class ParserAnalyzer {
                 continue;
             }
 
-            // Si és terminal, comprobem coincidència
+            // Si és terminal, comprovem coincidència
             if (isTerminal(topSym)) {
                 if (topSym.equals(look.getType())) {
                     cur.setToken(look);
