@@ -6,13 +6,17 @@ import java.util.Map;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+/**
+ * Classe Dictionary que carrega patrons de tokens des d'un fitxer JSON.
+ * Cada entrada associa un tipus de token amb el seu patró regex.
+ */
 public class Dictionary {
     private Map<String, String> tokenPatterns;
 
     /**
-     * Constructor that initializes the dictionary with token patterns from a JSON file.
+     * Construeix un diccionari amb els patrons de tokens definits al fitxer JSON.
      *
-     * @param filePath The path to the JSON file containing token patterns.
+     * @param filePath Ruta al fitxer JSON que conté les definicions de tokens.
      */
     public Dictionary(String filePath) {
         tokenPatterns = new HashMap<>();
@@ -32,9 +36,9 @@ public class Dictionary {
     }
 
     /**
-     * Returns the token patterns.
+     * Retorna els patrons de tokens carregats.
      *
-     * @return A map of token types to their corresponding regex patterns.
+     * @return Mapa on la clau és el tipus de token i el valor és el patró regex.
      */
     public Map<String, String> getTokenPatterns() {
         return tokenPatterns;

@@ -9,14 +9,17 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+/**
+ * Classe Grammar que parseja una gramàtica des d'un fitxer JSON.
+ * Emmagatzema les regles en un mapa de no-terminals a llistes de produccions.
+ */
 public class Grammar {
-    // Estructura: NoTerminal -> Lista de producciones -> Producción (lista de símbolos)
     private Map<String, List<List<String>>> grammarRules;
 
     /**
-     * Constructor que parsea la gramática a partir de un archivo JSON.
+     * Construeix una gramàtica llegint les regles des d'un fitxer JSON.
      *
-     * @param filePath La ruta al archivo JSON que contiene la gramática.
+     * @param filePath Ruta al fitxer JSON amb la gramàtica.
      */
     public Grammar(String filePath) {
         grammarRules = new HashMap<>();
@@ -28,12 +31,11 @@ public class Grammar {
             for (Object key : jsonObject.keySet()) {
                 String nonTerminal = (String) key;
 
-                // Obtenemos el array de producciones (que a su vez es un array de arrays)
+                // Obtenim array de produccions
                 JSONArray productionsArray = (JSONArray) jsonObject.get(nonTerminal);
-
                 List<List<String>> listOfProductions = new ArrayList<>();
 
-                // Recorremos cada producción
+                // Recorrem cada producció
                 for (Object productionObj : productionsArray) {
                     JSONArray productionArray = (JSONArray) productionObj;
                     List<String> productionSymbols = new ArrayList<>();
@@ -43,8 +45,6 @@ public class Grammar {
                     }
                     listOfProductions.add(productionSymbols);
                 }
-
-
                 grammarRules.put(nonTerminal, listOfProductions);
             }
         } catch (Exception e) {
@@ -53,11 +53,9 @@ public class Grammar {
     }
 
     /**
-     * Retorna las reglas de la gramática.
+     * Retorna les regles de la gramàtica carregades.
      *
-     * @return Un mapa con las reglas de la gramática, donde cada
-     *         no terminal se asocia a una lista de producciones,
-     *         y cada producción se representa como una lista de símbolos.
+     * @return Mapa de no-terminals a llistes de produccions.
      */
     public Map<String, List<List<String>>> getGrammarRules() {
         return grammarRules;

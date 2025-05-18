@@ -1,5 +1,8 @@
 package entities;
 
+/**
+ * Token representa una unitat lèxica amb tipus, lexema i posició.
+ */
 public class Token {
     private String type;
     private String lexeme;
@@ -7,12 +10,12 @@ public class Token {
     private int column;
 
     /**
-     * Constructor for Token.
+     * Construeix un token amb informació bàsica.
      *
-     * @param type   The type of the token.
-     * @param lexeme The lexeme of the token.
-     * @param line   The line number where the token was found.
-     * @param column The column number where the token was found.
+     * @param type   Tipus de token.
+     * @param lexeme Lexema reconegut.
+     * @param line   Línia on es troba.
+     * @param column Columna on es troba.
      */
     public Token(String type, String lexeme, int line, int column) {
         this.type = type;
@@ -22,46 +25,41 @@ public class Token {
     }
 
     /**
-     * Returns the type of the token.
+     * Retorna el tipus del token.
      *
-     * @return The type of the token.
+     * @return Tipus del token.
      */
     public String getType() {
         return type;
     }
 
     /**
-     * Returns the lexeme of the token.
+     * Retorna el lexema del token.
      *
-     * @return The lexeme of the token.
+     * @return Lexema del token.
      */
     public String getLexeme() {
         return lexeme;
     }
 
     /**
-     * Returns the line number where the token was found.
+     * Retorna el número de línia a la que està el token.
      *
-     * @return The line number of the token.
+     * @return Número de línia del token.
      */
     public int getLine() {
         return line;
     }
 
     /**
-     * Returns the column number where the token was found.
+     * Retorna el número de columna a la que està el token.
      *
-     * @return The column number of the token.
+     * @return Número de columna.
      */
     public int getColumn() {
         return column;
     }
 
-    /**
-     * Returns a string representation of the token.
-     *
-     * @return A string representation of the token.
-     */
     @Override
     public String toString() {
         return "Token{" +

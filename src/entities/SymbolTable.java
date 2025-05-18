@@ -7,11 +7,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Collection;
 
+/**
+ * Gestiona els símbols en diferents àmbits (scopes) i evita redeclaracions.
+ */
 public class SymbolTable {
-
-    // mapa: scope -> (nom símbol -> Symbol)
     private final Map<Integer, Map<String, Symbol>> table = new HashMap<>();
 
+    /**
+     * Cerca un símbol pel seu nom en l'àmbit més profund.
+     *
+     * @param name Nom del símbol a cercar.
+     * @return El símbol trobat o null si no existeix.
+     */
     public Symbol lookup(String name) {
         // Busquem des del scope més profund cap al global
         return getSymbol(name, getMaxScope());
@@ -21,6 +28,16 @@ public class SymbolTable {
         return table.keySet().stream().max(Integer::compareTo).orElse(0);
     }
 
+    /**
+     * Afegeix un nou símbol a la taula en un àmbit concret.
+     *
+     * @param name   Nom del símbol.
+     * @param type   Tipus de dades.
+     * @param scope  Àmbit numèric.
+     * @param line   Línia de declaració.
+     * @param column Columna de declaració.
+     * @throws RuntimeException Si ja existeix en aquest àmbit.
+     */
     public void addSymbol(String name, String type, int scope, int line, int column) {
         // Si el scope no existeix, el creem
         table.putIfAbsent(scope, new HashMap<>());
@@ -38,7 +55,11 @@ public class SymbolTable {
     }
 
     /**
-     * Retorna el símbol amb nom `name`, cercant des del scope donat cap a l'àmbit global (0).
+     * Retorna un símbol cercant des d'un àmbit específic fins al global.
+     *
+     * @param name  Nom del símbol.
+     * @param scope Àmbit inicial de cerca.
+     * @return El símbol trobat o null.
      */
     public Symbol getSymbol(String name, int scope) {
         for (int s = scope; s >= 0; s--) {
@@ -51,7 +72,10 @@ public class SymbolTable {
     }
 
     /**
-     * Retorna els símbols definit en un scope concret. Si no n'hi ha, retorna un mapa buit.
+     * Retorna els símbols d'un àmbit concret.
+     *
+     * @param scope Àmbit de consulta.
+     * @return Mapa de noms a símbols.
      */
     public Map<String, Symbol> getScopeSymbols(int scope) {
         return Collections.unmodifiableMap(
@@ -60,7 +84,9 @@ public class SymbolTable {
     }
 
     /**
-     * Retorna tots els símbols de tots els scopes (aplanant).
+     * Retorna tots els símbols de tots els àmbits aplanats.
+     *
+     * @return Col·lecció de tots els símbols.
      */
     public Collection<Symbol> getAllSymbols() {
         return table.values().stream()
@@ -68,6 +94,9 @@ public class SymbolTable {
                 .toList();
     }
 
+    /**
+     * Mostra per consola la taula de símbols.
+     */
     public void printTable() {
         String separator = "+-----------+--------+-----------+------+--------+";
         String header    = "| Name      | Scope  | TYPE      | LINE | COLUMN |";
