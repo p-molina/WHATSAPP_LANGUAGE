@@ -128,8 +128,8 @@ public class SemanticAnalyzer {
         String type    = getTypeFromTipus(tipusNode);
 
         // Comprovar re-declaració
-        if (getSymbol(name) != null) {
-            error(node, SemanticErrorType.VARIABLE_REDECLARED, name);
+        if (symbolTable.getScopeSymbols(currentScope()).containsKey(name)) {
+            error(idNode, SemanticErrorType.VARIABLE_REDECLARED, name);
         }
 
         // Afegir la variable a la taula de símbols
